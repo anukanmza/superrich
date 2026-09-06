@@ -165,7 +165,23 @@ export default function KeepLimitsPage() {
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">เลข</div>
-            <input id="sp-num" value={spNum} onChange={e => setSpNum(e.target.value.replace(/[^0-9]/g, ''))} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-2b')?.focus(); }} maxLength={3} className="w-16 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#a6e3a1] font-mono text-sm font-bold outline-none focus:border-[#89b4fa]" placeholder="00" />
+            <input 
+              id="sp-num" 
+              value={spNum} 
+              onChange={e => setSpNum(e.target.value.replace(/[^0-9]/g, ''))} 
+              onKeyDown={e => { 
+                if(e.key === 'Enter') {
+                  if (lockSpLimits) {
+                    handleAddSpecific();
+                  } else {
+                    document.getElementById('sp-2b')?.focus(); 
+                  }
+                } 
+              }} 
+              maxLength={3} 
+              className="w-16 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#a6e3a1] font-mono text-sm font-bold outline-none focus:border-[#89b4fa]" 
+              placeholder="00" 
+            />
           </div>
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">2บน</div>
