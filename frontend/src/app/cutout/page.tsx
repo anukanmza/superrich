@@ -31,6 +31,7 @@ export default function CutoutPage() {
   
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
 
   const loadData = () => {
     setIsLoading(true);
@@ -142,7 +143,21 @@ export default function CutoutPage() {
 
   const filteredSelectRows = allRows.filter(r => r.currentOverage > 0 && selectedTypes.has(r.type));
   const filteredKeepRows = allRows.filter(r => r.keep > 0 && selectedTypes.has(r.type));
-  const filteredHistoryRows = cutoutHistory.filter(r => selectedTypes.has(r.type)).reverse();
+  const filteredHistoryRows = cutoutHistory
+    .filter(r => selectedTypes.has(r.type))
+    .filter(r => selectedBatchId === 'all' || r.batchId === selectedBatchId)
+    .reverse();
+
+  // Extract unique batches for the dropdown
+  const batches = useMemo(() => {
+    const map = new Map<string, string>(); // batchId -> date time
+    cutoutHistory.forEach(r => {
+      if (r.batchId && !map.has(r.batchId)) {
+        map.set(r.batchId, `${r.date} ${r.time}`);
+      }
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label })).reverse();
+  }, [cutoutHistory]);
 
   // Stats for the select tab
   const totalRecv = allRows.reduce((sum, r) => sum + r.total, 0);
@@ -405,9 +420,24 @@ export default function CutoutPage() {
         {/* TAB 2: SEND HISTORY */}
         {activeTab === 'send' && (
           <div className="flex flex-col h-full">
-             <div className="p-4 border-b border-[#1e2433] bg-[#181825]">
-                <h2 className="text-[#89b4fa] font-bold">รายงานเลขส่งออก</h2>
-                <div className="text-xs text-[#6c7086]">ประวัติการตัดยอดส่งออก</div>
+             <div className="p-4 border-b border-[#1e2433] bg-[#181825] flex justify-between items-center">
+                <div>
+                  <h2 className="text-[#89b4fa] font-bold">รายงานเลขส่งออก</h2>
+                  <div className="text-xs text-[#6c7086]">ประวัติการตัดยอดส่งออก</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#6c7086] font-bold">เลือกรอบส่งออก:</span>
+                  <select
+                    value={selectedBatchId}
+                    onChange={(e) => setSelectedBatchId(e.target.value)}
+                    className="bg-[#11151e] border border-[#2a3244] rounded px-3 py-1 text-sm text-[#cdd6f4] outline-none focus:border-[#89b4fa]"
+                  >
+                    <option value="all">ดูทุกรอบรวมกัน</option>
+                    {batches.map(b => (
+                      <option key={b.id} value={b.id}>{b.label} (รหัส: {b.id})</option>
+                    ))}
+                  </select>
+                </div>
              </div>
              <div className="flex-1 overflow-auto">
               <table className="w-full text-sm text-left">
