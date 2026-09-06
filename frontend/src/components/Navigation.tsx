@@ -6,15 +6,14 @@ export default function Navigation() {
   const pathname = usePathname();
   
   const navItems = [
-    { name: '📌 ภาพรวม', path: '/overview' },
-    { name: '⌨ คีย์เลข', path: '/' },
+    { name: '⌨️ คีย์เลข', path: '/' },
+    { name: '📄 บิลทั้งหมด', path: '/bills' },
     { name: '📊 ยอดรวมเลข', path: '/summary' },
-    { name: '🧾 บิล/โพย', path: '/bills' },
-    { name: '✂ คัดส่งออก', path: '/cutout' },
+    { name: '✂️ คัดเลขส่งออก', path: '/cutout' },
     { name: '🏆 ผลรางวัล', path: '/rewards' },
-    { name: '📒 สรุปยอดแต่ละลูกค้า', path: '/customer-summary' },
-    { name: '💾 บันทึก/ปิดยอด', path: '/close-period' },
-    { name: '⚙ ตั้งค่า', path: '/settings' },
+    { name: '📒 สรุปยอดลูกค้า', path: '/customer-summary' },
+    { name: '💾 บันทึกและลบข้อมูล', path: '/close-period' },
+    { name: '⚙️ ตั้งค่า', path: '/settings' },
   ];
 
   return (
@@ -24,7 +23,7 @@ export default function Navigation() {
           key={item.path} 
           href={item.path}
           className={`px-4 py-2 rounded-md text-sm transition-colors ${
-            pathname === item.path || (pathname.startsWith('/settings') && item.path.includes('/settings'))
+            pathname === item.path || (pathname.startsWith(item.path) && item.path !== '/')
               ? 'bg-[#1e2d3d] text-[#89b4fa] border border-[#2a4a6b] font-bold' 
               : 'text-[#6c7086] hover:bg-[#11151e] hover:text-[#cdd6f4] border border-transparent'
           }`}

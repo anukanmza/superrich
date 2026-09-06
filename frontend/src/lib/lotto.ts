@@ -93,3 +93,38 @@ export const checkLimit = (
   }
   return amount > limit;
 };
+
+export const isWinning = (
+  entry: { number: string, type: string },
+  results: { [key: string]: string }
+): boolean => {
+  const { number, type } = entry;
+  if (type === '2บน') return !!results['2บน'] && number === results['2บน'];
+  if (type === '2ล่าง') return !!results['2ล่าง'] && number === results['2ล่าง'];
+  if (type === '3บน') return !!results['3บน'] && number === results['3บน'];
+  if (type === '3โต้ด') {
+    if (!results['3โต้ด']) return false;
+    const resPerms = getPerms(results['3โต้ด']);
+    return resPerms.includes(number); // If the played number is one of the permutations of the winning 3โต้ด
+  }
+  return false;
+};
+
+export const getPrizeRate = (
+  entry: { number: string, type: string },
+  rates: { [key: string]: string },
+  specificRates: { num: string, [key: string]: string }[]
+): number => {
+  const { number, type } = entry;
+  let rate = parseFloat(rates[type] || '0');
+  
+  let searchNums = [number];
+  if (type === '3โต้ด') searchNums = getPerms(number);
+
+  const sp = specificRates.find(x => searchNums.includes(x.num));
+  if (sp && sp[type] && sp[type].trim() !== '') {
+    rate = parseFloat(sp[type]);
+  }
+  
+  return rate;
+};
