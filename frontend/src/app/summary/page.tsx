@@ -21,10 +21,16 @@ export default function SummaryPage() {
     
     bills.forEach(bill => {
       bill.entries.forEach(entry => {
-        if (!map.has(entry.number)) {
-          map.set(entry.number, { num: entry.number, top: 0, bot: 0, tod: 0, total: 0, details: [] });
+        // ลอจิก3ตัวโต้ด: ถ้าเป็น 3โต้ด ให้เรียงเลขจากน้อยไปมากเพื่อมัดรวมยอด
+        let aggNum = entry.number;
+        if (entry.type === '3โต้ด') {
+          aggNum = entry.number.split('').sort().join('');
         }
-        const item = map.get(entry.number)!;
+
+        if (!map.has(aggNum)) {
+          map.set(aggNum, { num: aggNum, top: 0, bot: 0, tod: 0, total: 0, details: [] });
+        }
+        const item = map.get(aggNum)!;
         if (entry.type.includes('บน')) item.top += entry.amount;
         if (entry.type.includes('ล่าง')) item.bot += entry.amount;
         if (entry.type.includes('โต้ด')) item.tod += entry.amount;
