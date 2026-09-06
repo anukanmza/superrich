@@ -31,4 +31,15 @@ export class BillsService {
       },
     });
   }
+
+  async remove(id: number) {
+    // delete related entries first
+    await this.prisma.entry.deleteMany({
+      where: { billId: id },
+    });
+    // then delete the bill
+    return this.prisma.bill.delete({
+      where: { id },
+    });
+  }
 }

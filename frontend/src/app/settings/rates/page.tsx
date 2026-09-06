@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getSettings, updateSettings } from '../../../lib/api';
 
 export default function RatesPage() {
   const [rates, setRates] = useState({
@@ -8,9 +9,37 @@ export default function RatesPage() {
     '3บน': '500', '3ล่าง': '450', '3โต้ด': '80',
     'วิ่งบน': '3.2', 'วิ่งล่าง': '4.2'
   });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    getSettings().then(data => {
+      if (data.rates_json) {
+        try {
+          const parsed = JSON.parse(data.rates_json);
+          setRates(prev => ({ ...prev, ...parsed }));
+        } catch (e) {
+          console.error('Failed to parse rates', e);
+        }
+      }
+    }).catch(err => console.error(err));
+  }, []);
 
   const updateRate = (key: string, val: string) => {
     setRates(prev => ({ ...prev, [key]: val }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateSettings({
+        rates_json: JSON.stringify(rates)
+      });
+      alert('บันทึกอัตราจ่ายสำเร็จ');
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการบันทึก');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -49,8 +78,12 @@ export default function RatesPage() {
         </div>
       </div>
 
-      <button className="bg-[#1a3a20] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded hover:bg-[#223f28] transition-colors">
-        บันทึกอัตราจ่าย
+      <button 
+        onClick={handleSave}
+        disabled={isSaving}
+        className="bg-[#1a3a20] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded hover:bg-[#223f28] transition-colors disabled:opacity-50"
+      >
+        {isSaving ? 'กำลังบันทึก...' : 'บันทึกอัตราจ่าย'}
       </button>
 
       <hr className="border-[#1e2433] my-8 max-w-3xl" />

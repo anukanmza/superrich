@@ -1,11 +1,37 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getSettings, updateSettings } from '../../lib/api';
 
 export default function GeneralSettingsPage() {
   const [name, setName] = useState('เจ้ามือหวยของฉัน');
   const [period, setPeriod] = useState('16/06/68');
   const [disc, setDisc] = useState('20');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    getSettings().then(data => {
+      if (data.general_shopName) setName(data.general_shopName);
+      if (data.general_period) setPeriod(data.general_period);
+      if (data.general_disc) setDisc(data.general_disc);
+    }).catch(err => console.error(err));
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateSettings({
+        general_shopName: name,
+        general_period: period,
+        general_disc: disc
+      });
+      alert('บันทึกการตั้งค่าสำเร็จ');
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการบันทึก');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="p-6 h-full overflow-y-auto">
@@ -45,8 +71,12 @@ export default function GeneralSettingsPage() {
           </div>
         </div>
 
-        <button className="mt-6 bg-[#1a3a20] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded hover:bg-[#223f28] transition-colors">
-          บันทึกการตั้งค่า
+        <button 
+          onClick={handleSave}
+          disabled={isSaving}
+          className="mt-6 bg-[#1a3a20] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded hover:bg-[#223f28] transition-colors disabled:opacity-50"
+        >
+          {isSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
         </button>
       </div>
     </div>

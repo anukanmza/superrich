@@ -1,19 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchBills, Bill } from '../../lib/api';
+import { fetchBills, deleteBill, Bill } from '../../lib/api';
 
 export default function BillsPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const loadBills = () => {
+    setIsLoading(true);
     fetchBills().then(data => {
       // Sort by newest first
       setBills(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }).catch(err => console.error(err))
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    loadBills();
   }, []);
+
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (window.confirm('คุณแน่ใจหรือไม่ที่จะลบบิลนี้?')) {
+      try {
+        await deleteBill(id);
+        loadBills();
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการลบบิล');
+      }
+    }
+  };
 
   return (
     <div className="p-6 h-full flex flex-col">
@@ -52,8 +69,16 @@ export default function BillsPage() {
                   <div>รายการ: <span className="text-[#74c7ec] font-bold">{bill.entries.length}</span></div>
                   <div>สถานะ: <span className="text-[#a6e3a1] bg-[#1e3329] px-2 py-0.5 rounded-full border border-[#2d6b3b]">{bill.status === 'active' ? 'ปกติ' : bill.status}</span></div>
                 </div>
-                <div className="text-xl font-bold text-[#a6e3a1]">
-                  ฿{bill.total.toLocaleString()}
+                <div className="flex items-center gap-4">
+                  <div className="text-xl font-bold text-[#a6e3a1]">
+                    ฿{bill.total.toLocaleString()}
+                  </div>
+                  <button 
+                    onClick={(e) => handleDelete(e, bill.id)}
+                    className="bg-[#1e1215] text-[#f38ba8] hover:bg-[#f38ba8] hover:text-[#1e1215] border border-[#3a2a2a] px-3 py-1 rounded text-xs font-bold transition-colors"
+                  >
+                    ลบ
+                  </button>
                 </div>
               </div>
             </div>

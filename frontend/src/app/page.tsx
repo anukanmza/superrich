@@ -13,6 +13,7 @@ export default function KeyingPage() {
   
   const [entries, setEntries] = useState<EntryInput[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [lockAmt, setLockAmt] = useState(false);
   const isSavingRef = React.useRef(false);
 
   useEffect(() => {
@@ -95,8 +96,10 @@ export default function KeyingPage() {
     if (newEntries.length > 0) {
       setEntries(prev => [...newEntries, ...prev]); // Add to top of list
       setNumber('');
-      setTopAmt('');
-      setBotAmt('');
+      if (!lockAmt) {
+        setTopAmt('');
+        setBotAmt('');
+      }
       document.getElementById('input-number')?.focus();
     }
   };
@@ -175,29 +178,46 @@ export default function KeyingPage() {
               onKeyDown={e => handleKeyDown(e, 'input-top')}
               className="w-24 bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#a6e3a1] font-mono text-2xl text-center outline-none focus:border-[#89b4fa] tracking-widest font-bold"
             />
-            <input 
-              id="input-top"
-              type="text"
-              placeholder="บน"
-              value={topAmt}
-              onChange={e => setTopAmt(e.target.value.replace(/[^0-9]/g, ''))}
-              onKeyDown={e => handleKeyDown(e, 'input-bot')}
-              className="flex-1 bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
-            />
-            <input 
-              id="input-bot"
-              type="text"
-              placeholder="ล่าง/โต้ด"
-              value={botAmt}
-              onChange={e => setBotAmt(e.target.value.replace(/[^0-9*+]/g, ''))}
-              onKeyDown={e => handleKeyDown(e)}
-              className="flex-1 bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
-            />
+            <div className="flex-1 flex flex-col gap-1">
+              <input 
+                id="input-top"
+                type="text"
+                placeholder="บน"
+                value={topAmt}
+                onChange={e => setTopAmt(e.target.value.replace(/[^0-9]/g, ''))}
+                onKeyDown={e => handleKeyDown(e, 'input-bot')}
+                className="w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
+              />
+              <label className="text-xs text-[#6c7086] flex items-center justify-center gap-1 cursor-pointer select-none">
+                <input type="checkbox" checked={lockAmt} onChange={(e) => setLockAmt(e.target.checked)} className="accent-[#89b4fa]"/>
+                ล็อคยอด
+              </label>
+            </div>
+            <div className="flex-1 flex flex-col gap-1">
+              <input 
+                id="input-bot"
+                type="text"
+                placeholder="ล่าง/โต้ด"
+                value={botAmt}
+                onChange={e => setBotAmt(e.target.value.replace(/[^0-9*+]/g, ''))}
+                onKeyDown={e => handleKeyDown(e)}
+                className="w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="mt-auto bg-[#1e2433] rounded-md p-3 text-sm text-[#a6e3a1] glass">
-          <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเลื่อนช่อง ถ้ายู่ช่องสุดท้ายจะเพิ่มรายการ กด <span className="bg-[#0a0e14] px-2 py-0.5 rounded border border-[#2a3244]">F4</span> เพื่อบันทึกบิล
+        <div className="mt-auto flex flex-col gap-2">
+          <button 
+            onClick={() => setEntries([])}
+            disabled={entries.length === 0}
+            className="w-full bg-[#1e2d3d] hover:bg-[#2a4a6b] text-[#89b4fa] border border-[#2a4a6b] font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
+          >
+            ล้างรายการทั้งหมด
+          </button>
+          <div className="bg-[#1e2433] rounded-md p-3 text-sm text-[#a6e3a1] glass">
+            <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเลื่อนช่อง ถ้ายู่ช่องสุดท้ายจะเพิ่มรายการ กด <span className="bg-[#0a0e14] px-2 py-0.5 rounded border border-[#2a3244]">F4</span> เพื่อบันทึกบิล
+          </div>
         </div>
       </div>
 
@@ -218,7 +238,15 @@ export default function KeyingPage() {
                   <span className="text-[#a6e3a1] font-mono text-lg font-bold tracking-widest">{entry.number}</span>
                   <span className="text-[10px] bg-[#2a3244] px-2 py-1 rounded text-[#cdd6f4]">{entry.type}</span>
                 </div>
-                <div className="text-[#cdd6f4] font-bold">฿{entry.amount}</div>
+                <div className="flex items-center gap-4">
+                  <span className="text-[#cdd6f4] font-bold">฿{entry.amount}</span>
+                  <button 
+                    onClick={() => setEntries(prev => prev.filter((_, i) => i !== idx))}
+                    className="text-[#f38ba8] hover:bg-[#3b1e28] rounded px-2 py-1 text-xs transition-colors"
+                  >
+                    ลบ
+                  </button>
+                </div>
               </div>
             ))
           )}

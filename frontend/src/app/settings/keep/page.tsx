@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getSettings, updateSettings } from '../../../lib/api';
 
 export default function KeepLimitsPage() {
   const [keeps, setKeeps] = useState({
@@ -8,9 +9,37 @@ export default function KeepLimitsPage() {
     '3บน': '3000', '3ล่าง': '3000', '3โต้ด': '3000',
     'วิ่งบน': '2000', 'วิ่งล่าง': '2000'
   });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    getSettings().then(data => {
+      if (data.keeps_json) {
+        try {
+          const parsed = JSON.parse(data.keeps_json);
+          setKeeps(prev => ({ ...prev, ...parsed }));
+        } catch (e) {
+          console.error('Failed to parse keeps', e);
+        }
+      }
+    }).catch(err => console.error(err));
+  }, []);
 
   const updateKeep = (key: string, val: string) => {
     setKeeps(prev => ({ ...prev, [key]: val }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateSettings({
+        keeps_json: JSON.stringify(keeps)
+      });
+      alert('บันทึกวงเงินรวมสำเร็จ');
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการบันทึก');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -33,8 +62,12 @@ export default function KeepLimitsPage() {
         ))}
       </div>
 
-      <button className="bg-[#1a3a20] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded hover:bg-[#223f28] transition-colors">
-        บันทึกวงเงินรวม
+      <button 
+        onClick={handleSave}
+        disabled={isSaving}
+        className="bg-[#1a3a20] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded hover:bg-[#223f28] transition-colors disabled:opacity-50"
+      >
+        {isSaving ? 'กำลังบันทึก...' : 'บันทึกวงเงินรวม'}
       </button>
 
       <hr className="border-[#1e2433] my-8 max-w-3xl" />
