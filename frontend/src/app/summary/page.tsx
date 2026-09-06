@@ -70,9 +70,15 @@ export default function SummaryPage() {
     
     // 3. Filter by Number Search
     if (numSearch.trim() !== '') {
-      if (numSearch.length === 3 && revSearch) {
-        // ชุดเลข 6,3 กลับ: หาเลขทุกประตูของชุดนั้น
-        const perms = new Set(getPerms(numSearch));
+      if (revSearch) {
+        let perms: Set<string>;
+        if (numSearch.length === 3) {
+          perms = new Set(getPerms(numSearch));
+        } else if (numSearch.length === 2) {
+          perms = new Set([numSearch, numSearch[1] + numSearch[0]]);
+        } else {
+          perms = new Set([numSearch]);
+        }
         result = result.filter(x => perms.has(x.num));
       } else {
         // ตรงตัว
