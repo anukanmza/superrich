@@ -30,6 +30,7 @@ export default function CutoutPage() {
   const [isSending, setIsSending] = useState(false);
   
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [showCopyModal, setShowCopyModal] = useState(false);
 
   const loadData = () => {
     setIsLoading(true);
@@ -183,6 +184,35 @@ export default function CutoutPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    let csv = '\uFEFF'; // BOM for UTF-8
+    csv += 'เลข,ประเภท,ยอดรับสุทธิ,วงเงินเก็บ,ยอดเก็บ,ส่งออกแล้ว,สถานะ\n';
+    
+    filteredKeepRows.forEach(r => {
+      const status = r.currentOverage > 0 ? 'ยังเกินวงเงิน' : 'อยู่ในวงเงิน';
+      csv += `${r.num},${r.type},${r.total},${r.limit},${r.keep},${r.sent},${status}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `รายงานเลขเก็บ_${new Date().toLocaleDateString('en-CA')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const generateCopyText = () => {
+    const lines: string[] = [];
+    filteredSelectRows.forEach(r => {
+      if (selectedRows.has(r.id)) {
+        lines.push(`${r.num} = ${r.currentOverage} ${r.type}`);
+      }
+    });
+    return lines.join('\n');
+  };
+
   if (isLoading) {
     return <div className="p-8 text-[#cdd6f4]">กำลังโหลด...</div>;
   }
@@ -261,13 +291,22 @@ export default function CutoutPage() {
                 <h2 className="text-[#89b4fa] font-bold">คัดเลขส่งออก</h2>
                 <div className="text-xs text-[#6c7086]">แสดงเฉพาะเลขที่ยอดรับเกินวงเงิน เลือกและกดส่งออกเพื่อตัดยอด</div>
               </div>
-              <button 
-                onClick={handleSendOut}
-                disabled={selectedRows.size === 0 || isSending}
-                className="bg-[#f38ba8] hover:bg-[#d20f39] text-[#11151e] px-4 py-2 rounded font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSending ? 'กำลังประมวลผล...' : `📤 ส่งออก ${selectedRows.size} รายการ`}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowCopyModal(true)}
+                  disabled={selectedRows.size === 0}
+                  className="bg-[#1e2d3d] border border-[#2a4a6b] hover:bg-[#2a4a6b] text-[#89b4fa] px-4 py-2 rounded font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  📝 ดูข้อความส่งออก
+                </button>
+                <button 
+                  onClick={handleSendOut}
+                  disabled={selectedRows.size === 0 || isSending}
+                  className="bg-[#f38ba8] hover:bg-[#d20f39] text-[#11151e] px-4 py-2 rounded font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSending ? 'กำลังประมวลผล...' : `📤 บันทึกส่งออก ${selectedRows.size} รายการ`}
+                </button>
+              </div>
             </div>
             
             <div className="flex-1 overflow-auto">
@@ -364,9 +403,18 @@ export default function CutoutPage() {
         {/* TAB 3: KEEP REPORT */}
         {activeTab === 'keep' && (
           <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-[#1e2433] bg-[#181825]">
-                <h2 className="text-[#89b4fa] font-bold">รายงานเลขเก็บ</h2>
-                <div className="text-xs text-[#6c7086]">รายการยอดที่เก็บไว้หลังตัดส่งออกแล้ว (เฉพาะยอดที่ไม่เกินวงเงิน)</div>
+            <div className="p-4 border-b border-[#1e2433] bg-[#181825] flex justify-between items-center">
+                <div>
+                  <h2 className="text-[#89b4fa] font-bold">รายงานเลขเก็บ</h2>
+                  <div className="text-xs text-[#6c7086]">รายการยอดที่เก็บไว้หลังตัดส่งออกแล้ว (เฉพาะยอดที่ไม่เกินวงเงิน)</div>
+                </div>
+                <button 
+                  onClick={handleExportCSV}
+                  disabled={filteredKeepRows.length === 0}
+                  className="bg-[#1a3a20] border border-[#2d6b36] hover:bg-[#223f28] text-[#a6e3a1] px-4 py-2 rounded font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  📊 ส่งออก Excel (CSV)
+                </button>
              </div>
              <div className="flex-1 overflow-auto">
               <table className="w-full text-sm text-left">
@@ -410,6 +458,41 @@ export default function CutoutPage() {
         )}
         
       </div>
+
+      {/* Copy Text Modal */}
+      {showCopyModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-[#11151e] border border-[#2a4a6b] rounded-lg p-6 w-[500px] max-w-full shadow-2xl flex flex-col gap-4">
+            <h2 className="text-xl font-bold text-[#89b4fa]">ข้อความสำหรับส่งต่อ</h2>
+            <div className="text-sm text-[#6c7086]">คุณสามารถคัดลอกข้อความด้านล่างนี้เพื่อส่งต่อให้เจ้ามือคนอื่นได้ทันที</div>
+            
+            <textarea 
+              readOnly 
+              value={generateCopyText()} 
+              className="w-full h-64 bg-[#0a0e14] border border-[#2a3244] rounded p-3 text-[#a6e3a1] font-mono outline-none resize-none"
+            />
+
+            <div className="flex gap-3 mt-2">
+              <button 
+                onClick={() => setShowCopyModal(false)}
+                className="flex-1 bg-[#1e2433] border border-[#2a3244] text-[#a6adc8] font-bold py-2 rounded hover:bg-[#313244] transition-colors"
+              >
+                ปิด
+              </button>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(generateCopyText());
+                  alert('คัดลอกข้อความแล้ว!');
+                }}
+                className="flex-1 bg-[#89b4fa] text-[#11151e] font-bold py-2 rounded hover:bg-[#74c7ec] transition-colors"
+              >
+                คัดลอกข้อความ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
