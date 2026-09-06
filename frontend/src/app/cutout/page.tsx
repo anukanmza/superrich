@@ -151,7 +151,7 @@ export default function CutoutPage() {
     const timeStr = now.toLocaleTimeString('en-GB'); // HH:mm:ss
     const batchId = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const newCutouts = [];
+    const newCutouts: any[] = [];
     
     filteredSelectRows.forEach(r => {
       if (selectedRows.has(r.id)) {
