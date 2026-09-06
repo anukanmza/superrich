@@ -42,4 +42,29 @@ export class BillsService {
       where: { id },
     });
   }
+
+  async update(id: number, data: { entries: any[] }) {
+    const total = data.entries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
+
+    // Replace all entries
+    // We do this by deleting all existing entries and creating new ones in a transaction
+    return this.prisma.$transaction(async (prisma) => {
+      await prisma.entry.deleteMany({
+        where: { billId: id },
+      });
+
+      return prisma.bill.update({
+        where: { id },
+        data: {
+          total,
+          entries: {
+            create: data.entries,
+          },
+        },
+        include: {
+          entries: true,
+        },
+      });
+    });
+  }
 }

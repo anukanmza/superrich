@@ -85,6 +85,16 @@ export async function deleteBill(id: number) {
   return res.json();
 }
 
+export async function updateBill(id: number, data: { entries: EntryInput[] }) {
+  const res = await fetch(`${API_BASE}/bills/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update bill');
+  return res.json();
+}
+
 export async function getSettings() {
   const res = await fetch(`${API_BASE}/settings`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch settings');

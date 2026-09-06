@@ -15,6 +15,34 @@ export default function KeyingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [lockAmt, setLockAmt] = useState(false);
   const isSavingRef = React.useRef(false);
+  
+  // Modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // Load from LocalStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('lotto_keying_state');
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.entries) setEntries(state.entries);
+        if (state.number) setNumber(state.number);
+        if (state.topAmt) setTopAmt(state.topAmt);
+        if (state.botAmt) setBotAmt(state.botAmt);
+        if (state.lockAmt) setLockAmt(state.lockAmt);
+        if (state.selectedCustomerId) setSelectedCustomerId(state.selectedCustomerId);
+      }
+    } catch (e) {
+      console.error('Failed to load from local storage', e);
+    }
+  }, []);
+
+  // Save to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('lotto_keying_state', JSON.stringify({
+      entries, number, topAmt, botAmt, lockAmt, selectedCustomerId
+    }));
+  }, [entries, number, topAmt, botAmt, lockAmt, selectedCustomerId]);
 
   useEffect(() => {
     fetchCustomers().then(data => {
@@ -115,7 +143,12 @@ export default function KeyingPage() {
     }
   };
 
-  const saveBill = async () => {
+  const handleSaveClick = () => {
+    if (entries.length === 0 || !selectedCustomerId || isSavingRef.current) return;
+    setShowConfirmModal(true);
+  };
+
+  const confirmSaveBill = async () => {
     if (entries.length === 0 || !selectedCustomerId || isSavingRef.current) return;
     setIsSaving(true);
     isSavingRef.current = true;
@@ -126,6 +159,10 @@ export default function KeyingPage() {
       });
       alert('บันทึกบิลสำเร็จ!');
       setEntries([]);
+      setNumber('');
+      setTopAmt('');
+      setBotAmt('');
+      setShowConfirmModal(false);
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการบันทึกบิล');
     } finally {
@@ -134,17 +171,21 @@ export default function KeyingPage() {
     }
   };
 
-  // Keyboard shortcut listener for F4 on window level
-  useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'F4') {
         e.preventDefault();
-        saveBill();
+        if (!showConfirmModal) {
+          handleSaveClick();
+        } else {
+          confirmSaveBill();
+        }
+      } else if (e.key === 'Escape' && showConfirmModal) {
+        setShowConfirmModal(false);
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [entries, selectedCustomerId]);
+  }, [entries, selectedCustomerId, showConfirmModal]);
 
   const totalAmount = entries.reduce((sum, e) => sum + e.amount, 0);
 
@@ -178,7 +219,11 @@ export default function KeyingPage() {
               onKeyDown={e => handleKeyDown(e, 'input-top')}
               className="w-24 bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#a6e3a1] font-mono text-2xl text-center outline-none focus:border-[#89b4fa] tracking-widest font-bold"
             />
-            <div className="flex-1 flex flex-col gap-1">
+            <div className="flex-1 flex flex-col gap-1 relative">
+              <label className="absolute -top-6 left-0 text-[10px] text-[#89b4fa] flex items-center gap-1 cursor-pointer select-none bg-[#1e2d3d] px-2 py-0.5 rounded border border-[#2a4a6b]">
+                <input type="checkbox" checked={lockAmt} onChange={(e) => setLockAmt(e.target.checked)} className="accent-[#89b4fa] w-3 h-3"/>
+                ล็อคยอด
+              </label>
               <input 
                 id="input-top"
                 type="text"
@@ -188,10 +233,6 @@ export default function KeyingPage() {
                 onKeyDown={e => handleKeyDown(e, 'input-bot')}
                 className="w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
               />
-              <label className="text-xs text-[#6c7086] flex items-center justify-center gap-1 cursor-pointer select-none">
-                <input type="checkbox" checked={lockAmt} onChange={(e) => setLockAmt(e.target.checked)} className="accent-[#89b4fa]"/>
-                ล็อคยอด
-              </label>
             </div>
             <div className="flex-1 flex flex-col gap-1">
               <input 
@@ -208,13 +249,6 @@ export default function KeyingPage() {
         </div>
 
         <div className="mt-auto flex flex-col gap-2">
-          <button 
-            onClick={() => setEntries([])}
-            disabled={entries.length === 0}
-            className="w-full bg-[#1e2d3d] hover:bg-[#2a4a6b] text-[#89b4fa] border border-[#2a4a6b] font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
-          >
-            ล้างรายการทั้งหมด
-          </button>
           <div className="bg-[#1e2433] rounded-md p-3 text-sm text-[#a6e3a1] glass">
             <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเลื่อนช่อง ถ้ายู่ช่องสุดท้ายจะเพิ่มรายการ กด <span className="bg-[#0a0e14] px-2 py-0.5 rounded border border-[#2a3244]">F4</span> เพื่อบันทึกบิล
           </div>
@@ -256,15 +290,63 @@ export default function KeyingPage() {
           <div className="text-sm text-[#6c7086]">
             ยอดรวม: <span className="text-[#a6e3a1] text-xl font-bold ml-2">฿{totalAmount}</span>
           </div>
-          <button 
-            onClick={saveBill}
-            disabled={isSaving || entries.length === 0}
-            className="bg-[#1a3a20] hover:bg-[#223f28] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSaving ? 'กำลังบันทึก...' : 'บันทึกบิล [F4]'}
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => {
+                if(window.confirm('คุณต้องการล้างรายการที่คีย์มาทั้งหมดใช่หรือไม่?')) setEntries([]);
+              }}
+              disabled={entries.length === 0}
+              className="bg-[#1e1215] border border-[#3a2a2a] text-[#f38ba8] font-bold py-2 px-4 rounded hover:bg-[#3b1e28] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ล้างทั้งหมด
+            </button>
+            <button 
+              onClick={handleSaveClick}
+              disabled={isSaving || entries.length === 0}
+              className="bg-[#1a3a20] hover:bg-[#223f28] border border-[#2d6b36] text-[#a6e3a1] font-bold py-2 px-6 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              บันทึกบิล [F4]
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-[#11151e] border border-[#2a4a6b] rounded-lg p-6 w-[400px] shadow-2xl flex flex-col gap-6">
+            <div>
+              <h2 className="text-xl font-bold text-[#89b4fa] mb-2">ยืนยันการบันทึกบิล</h2>
+              <div className="text-[#cdd6f4] text-sm">
+                ลูกค้า: <span className="font-bold text-[#a6e3a1]">{customers.find(c => c.id === selectedCustomerId)?.name || 'ไม่ทราบชื่อ'}</span>
+              </div>
+              <div className="text-[#cdd6f4] text-sm mt-1">
+                จำนวน: <span className="font-bold text-[#74c7ec]">{entries.length} รายการ</span>
+              </div>
+              <div className="text-[#cdd6f4] text-sm mt-1">
+                ยอดรวม: <span className="font-bold text-[#f9e2af] text-xl">฿{totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 bg-[#1e1215] border border-[#3a2a2a] text-[#f38ba8] font-bold py-3 rounded hover:bg-[#3b1e28] transition-colors"
+              >
+                ยกเลิก (Esc)
+              </button>
+              <button 
+                onClick={confirmSaveBill}
+                disabled={isSaving}
+                autoFocus
+                className="flex-1 bg-[#1a3a20] border border-[#2d6b36] text-[#a6e3a1] font-bold py-3 rounded hover:bg-[#223f28] transition-colors shadow-[0_0_15px_rgba(166,227,161,0.2)]"
+              >
+                {isSaving ? 'กำลังบันทึก...' : 'ยืนยัน (Enter)'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
