@@ -36,6 +36,26 @@ export async function fetchCustomers(): Promise<Customer[]> {
   return res.json();
 }
 
+export async function createCustomer(data: Partial<Customer>) {
+  const res = await fetch(`${API_BASE}/customers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create customer');
+  return res.json();
+}
+
+export async function updateCustomer(id: number, data: Partial<Customer>) {
+  const res = await fetch(`${API_BASE}/customers/${id}`, {
+    method: 'PUT', // or PATCH depending on your NestJS controller
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update customer');
+  return res.json();
+}
+
 export interface BillInput {
   customerId: number;
   entries: EntryInput[];

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, KeyboardEvent } from 'react';
+import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { fetchCustomers, createBill, Customer, EntryInput } from '../lib/api';
 
 export default function KeyingPage() {
@@ -13,6 +13,7 @@ export default function KeyingPage() {
   
   const [entries, setEntries] = useState<EntryInput[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = React.useRef(false);
 
   useEffect(() => {
     fetchCustomers().then(data => {
@@ -21,22 +22,78 @@ export default function KeyingPage() {
     }).catch(err => console.error(err));
   }, []);
 
+  const parseBot = (v: string) => {
+    v = v.trim();
+    const hasStar = v.endsWith('*');
+    const hasPlus = v.endsWith('+');
+    const stripped = (hasStar || hasPlus) ? v.slice(0, -1) : v;
+    return {
+      numPart: stripped === '' ? 0 : (parseInt(stripped) || 0),
+      hasStar,
+      hasPlus
+    };
+  };
+
+  const getPerms = (n: string) => {
+    if (n.length < 3) return [n];
+    if (n[0] === n[1] && n[1] === n[2]) return [n];
+    const set = new Set<string>();
+    const a = n.split('');
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (j !== i) {
+          for (let k = 0; k < 3; k++) {
+            if (k !== i && k !== j) set.add(a[i] + a[j] + a[k]);
+          }
+        }
+      }
+    }
+    return Array.from(set);
+  };
+
   const addEntry = () => {
     if (!number) return;
     
     const newEntries: EntryInput[] = [];
-    
-    // Auto-detect type based on length
+    const topAmtParsed = parseInt(topAmt) || 0;
+    const p = parseBot(botAmt);
+    let ba = p.numPart;
+
     if (number.length === 2) {
-      if (topAmt) newEntries.push({ number, type: '2บน', amount: parseInt(topAmt) });
-      if (botAmt) newEntries.push({ number, type: '2ล่าง', amount: parseInt(botAmt) });
+      const add2 = (n: string) => {
+        if (topAmtParsed > 0) newEntries.push({ number: n, type: '2บน', amount: topAmtParsed });
+        if (ba > 0) newEntries.push({ number: n, type: '2ล่าง', amount: ba });
+      };
+
+      if (p.hasStar) {
+        ba = ba || topAmtParsed;
+        add2(number);
+        const rev = number[1] + number[0];
+        if (rev !== number) add2(rev);
+      } else {
+        add2(number);
+      }
     } else if (number.length === 3) {
-      if (topAmt) newEntries.push({ number, type: '3บน', amount: parseInt(topAmt) });
-      if (botAmt) newEntries.push({ number, type: '3โต้ด', amount: parseInt(botAmt) });
+      const perms = getPerms(number);
+      if (p.hasPlus) {
+        const alt = p.numPart;
+        if (topAmtParsed > 0) {
+          if (alt === 0) {
+            perms.forEach(x => newEntries.push({ number: x, type: '3บน', amount: topAmtParsed }));
+          } else {
+            newEntries.push({ number: number, type: '3บน', amount: topAmtParsed });
+            perms.filter(x => x !== number).forEach(x => newEntries.push({ number: x, type: '3บน', amount: alt }));
+          }
+        }
+      } else {
+        const tod = p.numPart;
+        if (topAmtParsed > 0) newEntries.push({ number, type: '3บน', amount: topAmtParsed });
+        if (tod > 0) newEntries.push({ number, type: '3โต้ด', amount: tod });
+      }
     }
     
     if (newEntries.length > 0) {
-      setEntries([...newEntries, ...entries]); // Add to top of list
+      setEntries(prev => [...newEntries, ...prev]); // Add to top of list
       setNumber('');
       setTopAmt('');
       setBotAmt('');
@@ -52,15 +109,13 @@ export default function KeyingPage() {
       } else {
         addEntry();
       }
-    } else if (e.key === 'F4') {
-      e.preventDefault();
-      saveBill();
     }
   };
 
   const saveBill = async () => {
-    if (entries.length === 0 || !selectedCustomerId) return;
+    if (entries.length === 0 || !selectedCustomerId || isSavingRef.current) return;
     setIsSaving(true);
+    isSavingRef.current = true;
     try {
       await createBill({
         customerId: Number(selectedCustomerId),
@@ -72,6 +127,7 @@ export default function KeyingPage() {
       alert('เกิดข้อผิดพลาดในการบันทึกบิล');
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   };
 
@@ -133,7 +189,7 @@ export default function KeyingPage() {
               type="text"
               placeholder="ล่าง/โต้ด"
               value={botAmt}
-              onChange={e => setBotAmt(e.target.value.replace(/[^0-9]/g, ''))}
+              onChange={e => setBotAmt(e.target.value.replace(/[^0-9*+]/g, ''))}
               onKeyDown={e => handleKeyDown(e)}
               className="flex-1 bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
             />

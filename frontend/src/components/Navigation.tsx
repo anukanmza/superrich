@@ -6,10 +6,15 @@ export default function Navigation() {
   const pathname = usePathname();
   
   const navItems = [
+    { name: '📌 ภาพรวม', path: '/overview' },
     { name: '⌨ คีย์เลข', path: '/' },
     { name: '📊 ยอดรวมเลข', path: '/summary' },
+    { name: '✂ คัดส่งออก', path: '/cutout' },
     { name: '🧾 บิล/โพย', path: '/bills' },
-    { name: '⚙ ตั้งค่า', path: '/settings/customers' },
+    { name: '🏆 ผลรางวัล', path: '/rewards' },
+    { name: '📒 สรุปยอดแต่ละลูกค้า', path: '/customer-summary' },
+    { name: '💾 บันทึก/ปิดยอด', path: '/close-period' },
+    { name: '⚙ ตั้งค่า', path: '/settings' },
   ];
 
   return (
