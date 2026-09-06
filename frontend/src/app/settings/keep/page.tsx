@@ -18,6 +18,7 @@ export default function KeepLimitsPage() {
   const [sp3b, setSp3b] = useState('');
   const [sp3l, setSp3l] = useState('');
   const [sp3t, setSp3t] = useState('');
+  const [lockSpLimits, setLockSpLimits] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -67,8 +68,19 @@ export default function KeepLimitsPage() {
       num: spNum, '2บน': sp2b, '2ล่าง': sp2l, '2โต้ด': sp2t,
       '3บน': sp3b, '3ล่าง': sp3l, '3โต้ด': sp3t
     }]);
-    setSpNum(''); setSp2b(''); setSp2l(''); setSp2t(''); setSp3b(''); setSp3l(''); setSp3t('');
+    setSpNum(''); 
+    if (!lockSpLimits) {
+      setSp2b(''); setSp2l(''); setSp2t(''); setSp3b(''); setSp3l(''); setSp3t('');
+    }
     document.getElementById('sp-num')?.focus();
+  };
+
+  const handleUpdateSpecific = (idx: number, key: string, val: string) => {
+    setSpecificLimits(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [key]: val };
+      return next;
+    });
   };
 
   const handleRemoveSpecific = (idx: number) => {
@@ -108,7 +120,7 @@ export default function KeepLimitsPage() {
       <h2 className="text-lg font-bold text-[#89b4fa] mb-2">วงเงินเฉพาะเจาะจงรายตัวเลข</h2>
       <div className="text-xs text-[#6c7086] mb-4">เว้นว่าง = ใช้วงเงินรวมของประเภทนั้น</div>
       
-      <div className="bg-[#0a0e14] border border-[#1e2433] rounded-lg p-4 max-w-4xl overflow-x-auto mb-6">
+      <div className="bg-[#0a0e14] border border-[#1e2433] rounded-lg p-4 max-w-4xl overflow-x-auto mb-6 max-h-[600px] overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-[#6c7086] text-xs bg-[#0d1117] uppercase">
@@ -126,12 +138,12 @@ export default function KeepLimitsPage() {
             {specificLimits.map((sp, idx) => (
               <tr key={idx} className="border-b border-[#13171f] hover:bg-[#11151e]">
                 <td className="py-2 px-2 text-[#a6e3a1] font-mono font-bold">{sp.num}</td>
-                <td className="py-2 px-2 text-center"><input className="w-12 bg-transparent border-none text-[#f9e2af] text-center text-xs outline-none" value={sp['2บน'] || '-'} readOnly/></td>
-                <td className="py-2 px-2 text-center"><input className="w-12 bg-transparent border-none text-[#f9e2af] text-center text-xs outline-none" value={sp['2ล่าง'] || '-'} readOnly/></td>
-                <td className="py-2 px-2 text-center"><input className="w-12 bg-transparent border-none text-[#f9e2af] text-center text-xs outline-none" value={sp['2โต้ด'] || '-'} readOnly/></td>
-                <td className="py-2 px-2 text-center"><input className="w-12 bg-transparent border-none text-[#f9e2af] text-center text-xs outline-none" value={sp['3บน'] || '-'} readOnly/></td>
-                <td className="py-2 px-2 text-center"><input className="w-12 bg-transparent border-none text-[#f9e2af] text-center text-xs outline-none" value={sp['3ล่าง'] || '-'} readOnly/></td>
-                <td className="py-2 px-2 text-center"><input className="w-12 bg-transparent border-none text-[#f9e2af] text-center text-xs outline-none" value={sp['3โต้ด'] || '-'} readOnly/></td>
+                <td className="py-2 px-2 text-center"><input onChange={(e) => handleUpdateSpecific(idx, '2บน', e.target.value)} className="w-12 bg-[#11151e] border border-[#2a3244] rounded text-[#f9e2af] text-center text-xs py-1 outline-none focus:border-[#89b4fa]" value={sp['2บน']}/></td>
+                <td className="py-2 px-2 text-center"><input onChange={(e) => handleUpdateSpecific(idx, '2ล่าง', e.target.value)} className="w-12 bg-[#11151e] border border-[#2a3244] rounded text-[#f9e2af] text-center text-xs py-1 outline-none focus:border-[#89b4fa]" value={sp['2ล่าง']}/></td>
+                <td className="py-2 px-2 text-center"><input onChange={(e) => handleUpdateSpecific(idx, '2โต้ด', e.target.value)} className="w-12 bg-[#11151e] border border-[#2a3244] rounded text-[#f9e2af] text-center text-xs py-1 outline-none focus:border-[#89b4fa]" value={sp['2โต้ด']}/></td>
+                <td className="py-2 px-2 text-center"><input onChange={(e) => handleUpdateSpecific(idx, '3บน', e.target.value)} className="w-12 bg-[#11151e] border border-[#2a3244] rounded text-[#f9e2af] text-center text-xs py-1 outline-none focus:border-[#89b4fa]" value={sp['3บน']}/></td>
+                <td className="py-2 px-2 text-center"><input onChange={(e) => handleUpdateSpecific(idx, '3ล่าง', e.target.value)} className="w-12 bg-[#11151e] border border-[#2a3244] rounded text-[#f9e2af] text-center text-xs py-1 outline-none focus:border-[#89b4fa]" value={sp['3ล่าง']}/></td>
+                <td className="py-2 px-2 text-center"><input onChange={(e) => handleUpdateSpecific(idx, '3โต้ด', e.target.value)} className="w-12 bg-[#11151e] border border-[#2a3244] rounded text-[#f9e2af] text-center text-xs py-1 outline-none focus:border-[#89b4fa]" value={sp['3โต้ด']}/></td>
                 <td className="py-2 px-2 text-right"><button onClick={() => handleRemoveSpecific(idx)} className="text-[#f38ba8] text-xs hover:underline">ลบ</button></td>
               </tr>
             ))}
@@ -144,7 +156,11 @@ export default function KeepLimitsPage() {
         </table>
       </div>
 
-      <div className="bg-[#0a0e14] border border-[#1e2433] rounded-lg p-4 max-w-4xl">
+      <div className="bg-[#0a0e14] border border-[#1e2433] rounded-lg p-4 max-w-4xl relative">
+        <label className="absolute top-4 right-4 text-[10px] text-[#89b4fa] flex items-center gap-1 cursor-pointer select-none bg-[#1e2d3d] px-2 py-1 rounded border border-[#2a4a6b]">
+          <input type="checkbox" checked={lockSpLimits} onChange={(e) => setLockSpLimits(e.target.checked)} className="accent-[#89b4fa] w-3 h-3"/>
+          ล็อคยอด
+        </label>
         <div className="text-xs text-[#45475a] uppercase tracking-wide mb-3">เพิ่มวงเงินเฉพาะเลข</div>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
@@ -153,27 +169,27 @@ export default function KeepLimitsPage() {
           </div>
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">2บน</div>
-            <input id="sp-2b" value={sp2b} onChange={e => setSp2b(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-2l')?.focus(); }} className="w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa]" placeholder="-" />
+            <input id="sp-2b" value={sp2b} readOnly={lockSpLimits} onChange={e => setSp2b(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-2l')?.focus(); }} className={`w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa] ${lockSpLimits ? 'opacity-50' : ''}`} placeholder="-" />
           </div>
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">2ล่าง</div>
-            <input id="sp-2l" value={sp2l} onChange={e => setSp2l(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-2t')?.focus(); }} className="w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa]" placeholder="-" />
+            <input id="sp-2l" value={sp2l} readOnly={lockSpLimits} onChange={e => setSp2l(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-2t')?.focus(); }} className={`w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa] ${lockSpLimits ? 'opacity-50' : ''}`} placeholder="-" />
           </div>
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">2โต้ด</div>
-            <input id="sp-2t" value={sp2t} onChange={e => setSp2t(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-3b')?.focus(); }} className="w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa]" placeholder="-" />
+            <input id="sp-2t" value={sp2t} readOnly={lockSpLimits} onChange={e => setSp2t(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-3b')?.focus(); }} className={`w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa] ${lockSpLimits ? 'opacity-50' : ''}`} placeholder="-" />
           </div>
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">3บน</div>
-            <input id="sp-3b" value={sp3b} onChange={e => setSp3b(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-3l')?.focus(); }} className="w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa]" placeholder="-" />
+            <input id="sp-3b" value={sp3b} readOnly={lockSpLimits} onChange={e => setSp3b(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-3l')?.focus(); }} className={`w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa] ${lockSpLimits ? 'opacity-50' : ''}`} placeholder="-" />
           </div>
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">3ล่าง</div>
-            <input id="sp-3l" value={sp3l} onChange={e => setSp3l(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-3t')?.focus(); }} className="w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa]" placeholder="-" />
+            <input id="sp-3l" value={sp3l} readOnly={lockSpLimits} onChange={e => setSp3l(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') document.getElementById('sp-3t')?.focus(); }} className={`w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa] ${lockSpLimits ? 'opacity-50' : ''}`} placeholder="-" />
           </div>
           <div>
             <div className="text-[10px] text-[#6c7086] mb-1">3โต้ด</div>
-            <input id="sp-3t" value={sp3t} onChange={e => setSp3t(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') handleAddSpecific(); }} className="w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa]" placeholder="-" />
+            <input id="sp-3t" value={sp3t} readOnly={lockSpLimits} onChange={e => setSp3t(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') handleAddSpecific(); }} className={`w-14 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1.5 text-[#f9e2af] text-sm font-bold outline-none focus:border-[#89b4fa] ${lockSpLimits ? 'opacity-50' : ''}`} placeholder="-" />
           </div>
           <button onClick={handleAddSpecific} className="bg-[#1e2d3d] border border-[#2a4a6b] text-[#89b4fa] font-bold py-1.5 px-4 rounded hover:bg-[#2a4a6b] transition-colors mb-[1px] text-sm">
             + เพิ่ม

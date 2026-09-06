@@ -72,3 +72,18 @@ export const generateEntries = (number: string, topAmt: string, botAmt: string):
   
   return newEntries;
 };
+
+export const checkLimit = (
+  number: string, 
+  type: string, 
+  amount: number, 
+  keeps: Record<string, string>, 
+  specificLimits: { num: string, [key: string]: string }[]
+): boolean => {
+  let limit = parseFloat(keeps[type] || '0');
+  const sp = specificLimits.find(x => x.num === number);
+  if (sp && sp[type] && sp[type].trim() !== '') {
+    limit = parseFloat(sp[type]);
+  }
+  return amount > limit;
+};

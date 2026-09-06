@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { fetchBills, fetchCustomers, Bill, Customer } from '../../lib/api';
-import { getPerms } from '../../lib/lotto';
+import { fetchBills, fetchCustomers, Bill, Customer, getSettings } from '../../lib/api';
+import { getPerms, checkLimit } from '../../lib/lotto';
 
 const ALL_TYPES = ['2บน', '2ล่าง', '3บน', '3โต้ด'];
 
 export default function SummaryPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [keeps, setKeeps] = useState<Record<string, string>>({});
+  const [specificLimits, setSpecificLimits] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Filters
@@ -20,10 +22,16 @@ export default function SummaryPage() {
   const [selectedNum, setSelectedNum] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([fetchBills(), fetchCustomers()])
-      .then(([billsData, customersData]) => {
+    Promise.all([fetchBills(), fetchCustomers(), getSettings()])
+      .then(([billsData, customersData, settingsData]) => {
         setBills(billsData);
         setCustomers(customersData);
+        if (settingsData.keeps_json) {
+          try { setKeeps(JSON.parse(settingsData.keeps_json)); } catch (e) {}
+        }
+        if (settingsData.specificLimits_json) {
+          try { setSpecificLimits(JSON.parse(settingsData.specificLimits_json)); } catch (e) {}
+        }
       })
       .catch(err => console.error(err))
       .finally(() => setIsLoading(false));
@@ -187,8 +195,24 @@ export default function SummaryPage() {
                   className={`grid grid-cols-4 px-3 py-2 text-sm border-b border-[#13171f] cursor-pointer hover:bg-[#11151e] transition-colors ${selectedNum === item.num ? 'bg-[#111a1a] border-l-2 border-l-[#a6e3a1]' : ''}`}
                 >
                   <div className="text-[#a6e3a1] font-mono font-bold tracking-wider">{item.num}</div>
-                  <div className="text-right text-[#74c7ec]">{item.top > 0 ? item.top : '-'}</div>
-                  <div className="text-right text-[#f9e2af]">{item.bot > 0 ? item.bot : (item.tod > 0 ? item.tod : '-')}</div>
+                  <div className="text-right text-[#74c7ec]">
+                    {item.top > 0 ? (
+                      <span className={checkLimit(item.num, item.num.length === 2 ? '2บน' : '3บน', item.top, keeps, specificLimits) ? 'text-[#f38ba8]' : ''}>
+                        {item.top} {checkLimit(item.num, item.num.length === 2 ? '2บน' : '3บน', item.top, keeps, specificLimits) && <span className="text-[10px]">(เกิน)</span>}
+                      </span>
+                    ) : '-'}
+                  </div>
+                  <div className="text-right text-[#f9e2af]">
+                    {item.bot > 0 ? (
+                      <span className={checkLimit(item.num, item.num.length === 2 ? '2ล่าง' : '3ล่าง', item.bot, keeps, specificLimits) ? 'text-[#f38ba8]' : ''}>
+                        {item.bot} {checkLimit(item.num, item.num.length === 2 ? '2ล่าง' : '3ล่าง', item.bot, keeps, specificLimits) && <span className="text-[10px]">(เกิน)</span>}
+                      </span>
+                    ) : (item.tod > 0 ? (
+                      <span className={checkLimit(item.num, item.num.length === 2 ? '2โต้ด' : '3โต้ด', item.tod, keeps, specificLimits) ? 'text-[#f38ba8]' : ''}>
+                        {item.tod} {checkLimit(item.num, item.num.length === 2 ? '2โต้ด' : '3โต้ด', item.tod, keeps, specificLimits) && <span className="text-[10px]">(เกิน)</span>}
+                      </span>
+                    ) : '-')}
+                  </div>
                   <div className="text-right text-[#cdd6f4] font-bold">{item.total}</div>
                 </div>
               ))
@@ -208,15 +232,24 @@ export default function SummaryPage() {
               <div className="grid grid-cols-3 gap-4 mb-8">
                 <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-4">
                   <div className="text-xs text-[#6c7086] mb-1">ยอดบน</div>
-                  <div className="text-xl text-[#74c7ec] font-bold">฿{selectedData.top.toLocaleString()}</div>
+                  <div className={`text-xl font-bold ${checkLimit(selectedData.num, selectedData.num.length === 2 ? '2บน' : '3บน', selectedData.top, keeps, specificLimits) ? 'text-[#f38ba8]' : 'text-[#74c7ec]'}`}>
+                    ฿{selectedData.top.toLocaleString()}
+                    {checkLimit(selectedData.num, selectedData.num.length === 2 ? '2บน' : '3บน', selectedData.top, keeps, specificLimits) && <span className="text-xs ml-1">(เกิน)</span>}
+                  </div>
                 </div>
                 <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-4">
                   <div className="text-xs text-[#6c7086] mb-1">ยอดล่าง</div>
-                  <div className="text-xl text-[#f9e2af] font-bold">฿{selectedData.bot.toLocaleString()}</div>
+                  <div className={`text-xl font-bold ${checkLimit(selectedData.num, selectedData.num.length === 2 ? '2ล่าง' : '3ล่าง', selectedData.bot, keeps, specificLimits) ? 'text-[#f38ba8]' : 'text-[#f9e2af]'}`}>
+                    ฿{selectedData.bot.toLocaleString()}
+                    {checkLimit(selectedData.num, selectedData.num.length === 2 ? '2ล่าง' : '3ล่าง', selectedData.bot, keeps, specificLimits) && <span className="text-xs ml-1">(เกิน)</span>}
+                  </div>
                 </div>
                 <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-4">
                   <div className="text-xs text-[#6c7086] mb-1">ยอดโต้ด</div>
-                  <div className="text-xl text-[#cba6f7] font-bold">฿{selectedData.tod.toLocaleString()}</div>
+                  <div className={`text-xl font-bold ${checkLimit(selectedData.num, selectedData.num.length === 2 ? '2โต้ด' : '3โต้ด', selectedData.tod, keeps, specificLimits) ? 'text-[#f38ba8]' : 'text-[#cba6f7]'}`}>
+                    ฿{selectedData.tod.toLocaleString()}
+                    {checkLimit(selectedData.num, selectedData.num.length === 2 ? '2โต้ด' : '3โต้ด', selectedData.tod, keeps, specificLimits) && <span className="text-xs ml-1">(เกิน)</span>}
+                  </div>
                 </div>
               </div>
 

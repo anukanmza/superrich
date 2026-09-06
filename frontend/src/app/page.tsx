@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, KeyboardEvent } from 'react';
-import { fetchCustomers, createBill, Customer, EntryInput } from '../lib/api';
-import { generateEntries } from '../lib/lotto';
+import React, { useState, useEffect, KeyboardEvent, useMemo } from 'react';
+import { fetchCustomers, fetchBills, createBill, Customer, EntryInput, getSettings, Bill } from '../lib/api';
+import { generateEntries, checkLimit } from '../lib/lotto';
 
 export default function KeyingPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -17,6 +17,11 @@ export default function KeyingPage() {
   const [lockAmt, setLockAmt] = useState(false);
   const isSavingRef = React.useRef(false);
   
+  // Base Aggregation for limits
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [keeps, setKeeps] = useState<Record<string, string>>({});
+  const [specificLimits, setSpecificLimits] = useState<any[]>([]);
+
   // Modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   
@@ -46,11 +51,51 @@ export default function KeyingPage() {
   }, [entries, number, topAmt, botAmt, lockAmt, selectedCustomerId]);
 
   useEffect(() => {
-    fetchCustomers().then(data => {
-      setCustomers(data);
-      if (data.length > 0) setSelectedCustomerId(data[0].id);
-    }).catch(err => console.error(err));
+    Promise.all([fetchCustomers(), fetchBills(), getSettings()])
+      .then(([customersData, billsData, settingsData]) => {
+        setCustomers(customersData);
+        if (customersData.length > 0 && !selectedCustomerId) setSelectedCustomerId(customersData[0].id);
+        
+        setBills(billsData);
+        if (settingsData.keeps_json) {
+          try { setKeeps(JSON.parse(settingsData.keeps_json)); } catch (e) {}
+        }
+        if (settingsData.specificLimits_json) {
+          try { setSpecificLimits(JSON.parse(settingsData.specificLimits_json)); } catch (e) {}
+        }
+      }).catch(err => console.error(err));
   }, []);
+
+  const baseAgg = useMemo(() => {
+    const agg: Record<string, Record<string, number>> = {};
+    bills.forEach(b => b.entries.forEach(e => {
+      if (!agg[e.number]) agg[e.number] = {};
+      agg[e.number][e.type] = (agg[e.number][e.type] || 0) + e.amount;
+    }));
+    return agg;
+  }, [bills]);
+
+  // Create an array mapping each entry to whether it exceeds limits
+  const entryExceedsLimit = useMemo(() => {
+    const currentAgg: Record<string, Record<string, number>> = {};
+    const result: boolean[] = [];
+    
+    // Process backwards since new entries are unshifted to the start of the array
+    // Wait, the entries array is [newest, ...oldest].
+    // To correctly calculate running total from oldest to newest, we iterate from right to left.
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const e = entries[i];
+      const baseVal = baseAgg[e.number]?.[e.type] || 0;
+      if (!currentAgg[e.number]) currentAgg[e.number] = {};
+      const currentVal = currentAgg[e.number][e.type] || 0;
+      
+      const newTotal = baseVal + currentVal + e.amount;
+      currentAgg[e.number][e.type] = currentVal + e.amount;
+      
+      result[i] = checkLimit(e.number, e.type, newTotal, keeps, specificLimits);
+    }
+    return result;
+  }, [entries, baseAgg, keeps, specificLimits]);
 
   const addEntry = () => {
     const newEntries = generateEntries(number, topAmt, botAmt);
@@ -213,7 +258,9 @@ export default function KeyingPage() {
                   <span className="text-[10px] bg-[#2a3244] px-2 py-1 rounded text-[#cdd6f4]">{entry.type}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-[#cdd6f4] font-bold">฿{entry.amount}</span>
+                  <span className={`font-bold ${entryExceedsLimit[idx] ? 'text-[#f38ba8]' : 'text-[#cdd6f4]'}`}>
+                    ฿{entry.amount} {entryExceedsLimit[idx] && <span className="text-xs ml-1">(เกิน)</span>}
+                  </span>
                   <button 
                     onClick={() => setEntries(prev => prev.filter((_, i) => i !== idx))}
                     className="text-[#f38ba8] hover:bg-[#3b1e28] rounded px-2 py-1 text-xs transition-colors"
