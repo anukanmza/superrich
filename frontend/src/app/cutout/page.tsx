@@ -162,7 +162,8 @@ export default function CutoutPage() {
   // Stats for the select tab
   const totalRecv = allRows.reduce((sum, r) => sum + r.total, 0);
   const totalKeep = allRows.reduce((sum, r) => sum + r.keep, 0);
-  const totalSendOverage = allRows.reduce((sum, r) => sum + r.send, 0);
+  const totalWaitExport = allRows.reduce((sum, r) => sum + r.currentOverage, 0);
+  const totalSentExport = allRows.reduce((sum, r) => sum + r.sent, 0);
   const overageCount = allRows.filter(r => r.currentOverage > 0).length;
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -320,7 +321,7 @@ export default function CutoutPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-5 gap-4 mb-6">
         <div className="bg-[#1e2433] p-4 rounded-lg border border-[#2a3244]">
           <div className="text-xs text-[#6c7086] mb-1">ยอดรับทั้งหมด</div>
           <div className="text-xl font-bold text-[#a6e3a1]">฿{totalRecv.toLocaleString()}</div>
@@ -330,12 +331,16 @@ export default function CutoutPage() {
           <div className="text-xl font-bold text-[#a6e3a1]">฿{totalKeep.toLocaleString()}</div>
         </div>
         <div className="bg-[#1e2433] p-4 rounded-lg border border-[#2a3244]">
-          <div className="text-xs text-[#6c7086] mb-1">ยอดต้องส่งออก (Total)</div>
-          <div className="text-xl font-bold text-[#f38ba8]">฿{totalSendOverage.toLocaleString()}</div>
+          <div className="text-xs text-[#6c7086] mb-1">ยอดรอส่งออก (Total)</div>
+          <div className="text-xl font-bold text-[#f38ba8]">฿{totalWaitExport.toLocaleString()}</div>
+        </div>
+        <div className="bg-[#1e2433] p-4 rounded-lg border border-[#2a3244]">
+          <div className="text-xs text-[#6c7086] mb-1">ยอดส่งออกแล้ว</div>
+          <div className="text-xl font-bold text-[#f9e2af]">฿{totalSentExport.toLocaleString()}</div>
         </div>
         <div className="bg-[#1e2433] p-4 rounded-lg border border-[#2a3244]">
           <div className="text-xs text-[#6c7086] mb-1">รายการที่รอส่งออก</div>
-          <div className="text-xl font-bold text-[#f9e2af]">{overageCount} รายการ</div>
+          <div className="text-xl font-bold text-[#f38ba8]">{overageCount} รายการ</div>
         </div>
       </div>
 
@@ -385,7 +390,7 @@ export default function CutoutPage() {
                     <th className="p-3 text-right">ยอดรับสุทธิ</th>
                     <th className="p-3 text-right">วงเงินเก็บ</th>
                     <th className="p-3 text-right">ส่งออกแล้ว</th>
-                    <th className="p-3 text-right text-[#f38ba8]">ยอดต้องส่งออก</th>
+                    <th className="p-3 text-right text-[#f38ba8]">ยอดรอส่งออก</th>
                   </tr>
                 </thead>
                 <tbody>
