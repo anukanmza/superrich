@@ -171,6 +171,8 @@ export default function KeyingPage() {
     }
   };
 
+  // Keyboard shortcut listener for F4 on window level
+  useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'F4') {
         e.preventDefault();
