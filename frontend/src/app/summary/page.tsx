@@ -1,26 +1,46 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { fetchBills, Bill } from '../../lib/api';
+import { fetchBills, fetchCustomers, Bill, Customer } from '../../lib/api';
+import { getPerms } from '../../lib/lotto';
+
+const ALL_TYPES = ['2บน', '2ล่าง', '3บน', '3โต้ด'];
 
 export default function SummaryPage() {
   const [bills, setBills] = useState<Bill[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filterType, setFilterType] = useState('all');
+  
+  // Filters
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set(ALL_TYPES));
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | 'all'>('all');
+  const [numSearch, setNumSearch] = useState('');
+  const [revSearch, setRevSearch] = useState(false);
+  
   const [selectedNum, setSelectedNum] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBills().then(data => {
-      setBills(data);
-    }).catch(err => console.error(err))
+    Promise.all([fetchBills(), fetchCustomers()])
+      .then(([billsData, customersData]) => {
+        setBills(billsData);
+        setCustomers(customersData);
+      })
+      .catch(err => console.error(err))
       .finally(() => setIsLoading(false));
   }, []);
 
   const aggregated = useMemo(() => {
     const map = new Map<string, { num: string, top: number, bot: number, tod: number, total: number, details: any[] }>();
     
-    bills.forEach(bill => {
+    // 1. Filter Bills by Customer
+    const filteredBills = selectedCustomerId === 'all' 
+      ? bills 
+      : bills.filter(b => b.customerId === selectedCustomerId);
+
+    filteredBills.forEach(bill => {
       bill.entries.forEach(entry => {
+        // 2. Filter by selected Types (2บน, 2ล่าง, 3บน, 3โต้ด)
+        if (!selectedTypes.has(entry.type)) return;
         // ลอจิก3ตัวโต้ด: ถ้าเป็น 3โต้ด ให้เรียงเลขจากน้อยไปมากเพื่อมัดรวมยอด
         let aggNum = entry.number;
         if (entry.type === '3โต้ด') {
@@ -48,40 +68,95 @@ export default function SummaryPage() {
 
     let result = Array.from(map.values()).sort((a, b) => b.total - a.total);
     
-    if (filterType === '2') {
-      result = result.filter(x => x.num.length === 2);
-    } else if (filterType === '3') {
-      result = result.filter(x => x.num.length === 3);
+    // 3. Filter by Number Search
+    if (numSearch.trim() !== '') {
+      if (numSearch.length === 3 && revSearch) {
+        // ชุดเลข 6,3 กลับ: หาเลขทุกประตูของชุดนั้น
+        const perms = new Set(getPerms(numSearch));
+        result = result.filter(x => perms.has(x.num));
+      } else {
+        // ตรงตัว
+        result = result.filter(x => x.num === numSearch);
+      }
     }
 
     return result;
-  }, [bills, filterType]);
+  }, [bills, selectedTypes, selectedCustomerId, numSearch, revSearch]);
 
   const selectedData = aggregated.find(x => x.num === selectedNum);
 
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="bg-[#0d1117] border-b border-[#1e2433] px-4 py-2 flex items-center gap-3">
-        <span className="text-xs text-[#6c7086]">ประเภท:</span>
-        <button 
-          onClick={() => setFilterType('all')}
-          className={`text-xs px-3 py-1.5 rounded border transition-colors ${filterType === 'all' ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244] hover:text-[#cdd6f4]'}`}
-        >
-          ทั้งหมด
-        </button>
-        <button 
-          onClick={() => setFilterType('2')}
-          className={`text-xs px-3 py-1.5 rounded border transition-colors ${filterType === '2' ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244] hover:text-[#cdd6f4]'}`}
-        >
-          2 ตัว
-        </button>
-        <button 
-          onClick={() => setFilterType('3')}
-          className={`text-xs px-3 py-1.5 rounded border transition-colors ${filterType === '3' ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244] hover:text-[#cdd6f4]'}`}
-        >
-          3 ตัว
-        </button>
+      <div className="bg-[#0d1117] border-b border-[#1e2433] px-4 py-2 flex flex-wrap items-center gap-4">
+        
+        {/* Type Filter */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#6c7086]">ประเภท:</span>
+          <button 
+            onClick={() => setSelectedTypes(selectedTypes.size === ALL_TYPES.length ? new Set() : new Set(ALL_TYPES))}
+            className={`text-xs px-2 py-1 rounded border transition-colors ${selectedTypes.size === ALL_TYPES.length ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244] hover:text-[#cdd6f4]'}`}
+          >
+            ทั้งหมด
+          </button>
+          {ALL_TYPES.map(type => (
+            <label key={type} className="flex items-center gap-1 text-xs text-[#cdd6f4] cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="accent-[#89b4fa]"
+                checked={selectedTypes.has(type)}
+                onChange={(e) => {
+                  const newSet = new Set(selectedTypes);
+                  if (e.target.checked) newSet.add(type);
+                  else newSet.delete(type);
+                  setSelectedTypes(newSet);
+                }}
+              />
+              {type}
+            </label>
+          ))}
+        </div>
+
+        <div className="w-px h-5 bg-[#2a3244]"></div>
+
+        {/* Customer Filter */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#6c7086]">ลูกค้า:</span>
+          <select 
+            value={selectedCustomerId}
+            onChange={(e) => setSelectedCustomerId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+            className="bg-[#11151e] border border-[#2a3244] rounded text-[#cdd6f4] text-xs px-2 py-1 outline-none focus:border-[#89b4fa]"
+          >
+            <option value="all">ทั้งหมด</option>
+            {customers.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="w-px h-5 bg-[#2a3244]"></div>
+
+        {/* Number Search */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#6c7086]">เลข:</span>
+          <input 
+            type="text" 
+            maxLength={3}
+            placeholder="00"
+            value={numSearch}
+            onChange={e => setNumSearch(e.target.value.replace(/[^0-9]/g, ''))}
+            className="w-14 bg-[#11151e] border border-[#2a3244] rounded text-[#a6e3a1] font-mono font-bold text-center text-sm px-1 py-1 outline-none focus:border-[#89b4fa]"
+          />
+          <label className="flex items-center gap-1 text-[11px] text-[#cba6f7] cursor-pointer ml-1 select-none">
+            <input 
+              type="checkbox" 
+              checked={revSearch}
+              onChange={e => setRevSearch(e.target.checked)}
+              className="accent-[#cba6f7]"
+            />
+            ชุดเลข 6,3 กลับ
+          </label>
+        </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
