@@ -229,12 +229,31 @@ export default function CutoutPage() {
   };
 
   const generateCopyText = () => {
-    const lines: string[] = [];
+    const grouped: Record<string, { top: number, bot: number }> = {};
+    
     filteredSelectRows.forEach(r => {
       if (selectedRows.has(r.id)) {
-        lines.push(`${r.num} = ${r.currentOverage} ${r.type}`);
+        if (!grouped[r.num]) grouped[r.num] = { top: 0, bot: 0 };
+        if (r.type.includes('บน')) {
+          grouped[r.num].top += r.currentOverage;
+        } else if (r.type.includes('ล่าง') || r.type.includes('โต้ด')) {
+          grouped[r.num].bot += r.currentOverage;
+        }
       }
     });
+
+    const lines: string[] = [];
+    Object.keys(grouped).forEach(num => {
+      const g = grouped[num];
+      if (g.top > 0 && g.bot > 0) {
+        lines.push(`${num}-${g.top}*${g.bot}`);
+      } else if (g.top > 0) {
+        lines.push(`${num}-${g.top}`);
+      } else if (g.bot > 0) {
+        lines.push(`${num}-0*${g.bot}`);
+      }
+    });
+    
     return lines.join('\n');
   };
 
