@@ -7,7 +7,7 @@ import { getPerms, checkLimit } from '../../lib/lotto';
 const ALL_TYPES = ['2บน', '2ล่าง', '3บน', '3โต้ด'];
 
 export default function SummaryPage() {
-  const [bills, setBills] = useState<Bill[]>([]);
+  const [bills, setBills] = useState<(Bill & { customerBillIndex: number })[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [keeps, setKeeps] = useState<Record<string, string>>({});
   const [specificLimits, setSpecificLimits] = useState<any[]>([]);
@@ -24,7 +24,14 @@ export default function SummaryPage() {
   useEffect(() => {
     Promise.all([fetchBills(), fetchCustomers(), getSettings()])
       .then(([billsData, customersData, settingsData]) => {
-        setBills(billsData);
+        const sortedBills = billsData.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        const counts: Record<number, number> = {};
+        const billsWithIndex = sortedBills.map(b => {
+          counts[b.customerId] = (counts[b.customerId] || 0) + 1;
+          return { ...b, customerBillIndex: counts[b.customerId] };
+        });
+        
+        setBills(billsWithIndex);
         setCustomers(customersData);
         if (settingsData.keeps_json) {
           try { setKeeps(JSON.parse(settingsData.keeps_json)); } catch (e) {}
@@ -70,6 +77,7 @@ export default function SummaryPage() {
           type: entry.type,
           amount: entry.amount,
           billId: bill.id,
+          customerBillIndex: bill.customerBillIndex,
         });
       });
     });
@@ -256,12 +264,13 @@ export default function SummaryPage() {
               <h3 className="text-[#89b4fa] font-bold mb-3 border-b border-[#1e2433] pb-2">รายละเอียดบิลที่แทง</h3>
               <div className="space-y-2">
                 {selectedData.details.map((d, i) => (
-                  <div key={i} className="flex justify-between items-center bg-[#11151e] p-3 rounded border border-[#1e2433]">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#6c7086] text-xs font-mono">#{d.billId.toString().padStart(4, '0')}</span>
-                      <span className="font-bold" style={{ color: d.customerColor || '#cdd6f4' }}>{d.customerName}</span>
-                      <span className="text-[10px] bg-[#1e2433] px-2 py-1 rounded text-[#6c7086]">{d.type}</span>
-                    </div>
+                    <div key={i} className="flex justify-between items-center bg-[#11151e] p-3 rounded border border-[#1e2433]">
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold" style={{ color: d.customerColor || '#cdd6f4' }}>
+                          {d.customerName} บิลที่ {d.customerBillIndex}
+                        </span>
+                        <span className="text-[10px] bg-[#1e2433] px-2 py-1 rounded text-[#6c7086]">{d.type}</span>
+                      </div>
                     <div className="text-[#a6e3a1] font-bold">฿{d.amount}</div>
                   </div>
                 ))}

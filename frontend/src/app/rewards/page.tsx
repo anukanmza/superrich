@@ -26,7 +26,7 @@ export default function RewardsPage() {
 
   // State Data
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [bills, setBills] = useState<Bill[]>([]);
+  const [bills, setBills] = useState<(Bill & { customerBillIndex: number })[]>([]);
   const [results, setResults] = useState<Record<string, string>>({
     '2บน': '', '2ล่าง': '', '3บน': '', '3โต้ด': ''
   });
@@ -47,7 +47,14 @@ export default function RewardsPage() {
     Promise.all([fetchCustomers(), fetchBills(), getSettings()])
       .then(([customersData, billsData, settingsData]) => {
         setCustomers(customersData);
-        setBills(billsData);
+        
+        const sortedBills = billsData.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        const counts: Record<number, number> = {};
+        const billsWithIndex = sortedBills.map(b => {
+          counts[b.customerId] = (counts[b.customerId] || 0) + 1;
+          return { ...b, customerBillIndex: counts[b.customerId] };
+        });
+        setBills(billsWithIndex);
         
         if (settingsData.results_json) {
           try {
@@ -104,14 +111,12 @@ export default function RewardsPage() {
   const winningData = useMemo(() => {
     // 1. Calculate Sent Totals grouped by logical number and type
     const sentMap: Record<string, number> = {};
-    (cutoutHistory || []).forEach(batch => {
-      (batch?.rows || []).forEach(r => {
-        if (!r) return;
-        let numKey = r.num || '';
-        if (r.type === '3โต้ด') numKey = numKey.split('').sort().join('');
-        const k = `${numKey}|${r.type}`;
-        sentMap[k] = (sentMap[k] || 0) + (r.amount || 0);
-      });
+    (cutoutHistory || []).forEach((r: any) => {
+      if (!r) return;
+      let numKey = r.num || '';
+      if (r.type === '3โต้ด') numKey = numKey.split('').sort().join('');
+      const k = `${numKey}|${r.type}`;
+      sentMap[k] = (sentMap[k] || 0) + (r.amount || 0);
     });
 
     // 2. Calculate Raw Totals (Total received) grouped by logical number and type
@@ -358,7 +363,9 @@ export default function RewardsPage() {
                   <tbody>
                     {overallSummary.map((row, i) => (
                       <tr key={i} className="border-b border-[#1e2433] hover:bg-[#1e2433]">
-                        <td className="p-3 font-mono text-[#89b4fa]">#{row.bill.id}</td>
+                        <td className="p-3 font-mono font-bold text-[#89b4fa]">
+                          {row.customer?.name || 'ไม่ทราบชื่อ'} บิลที่ {row.bill.customerBillIndex}
+                        </td>
                         <td className="p-3">{row.customer?.name || 'ไม่ทราบชื่อ'}</td>
                         <td className="p-3 text-center">{row.count}</td>
                         <td className="p-3 text-right">฿{row.amt.toLocaleString()}</td>
