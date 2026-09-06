@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { fetchCustomers, createBill, Customer, EntryInput } from '../lib/api';
+import { generateEntries } from '../lib/lotto';
 
 export default function KeyingPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -51,78 +52,11 @@ export default function KeyingPage() {
     }).catch(err => console.error(err));
   }, []);
 
-  const parseBot = (v: string) => {
-    v = v.trim();
-    const hasStar = v.endsWith('*');
-    const hasPlus = v.endsWith('+');
-    const stripped = (hasStar || hasPlus) ? v.slice(0, -1) : v;
-    return {
-      numPart: stripped === '' ? 0 : (parseInt(stripped) || 0),
-      hasStar,
-      hasPlus
-    };
-  };
-
-  const getPerms = (n: string) => {
-    if (n.length < 3) return [n];
-    if (n[0] === n[1] && n[1] === n[2]) return [n];
-    const set = new Set<string>();
-    const a = n.split('');
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        if (j !== i) {
-          for (let k = 0; k < 3; k++) {
-            if (k !== i && k !== j) set.add(a[i] + a[j] + a[k]);
-          }
-        }
-      }
-    }
-    return Array.from(set);
-  };
-
   const addEntry = () => {
-    if (!number) return;
-    
-    const newEntries: EntryInput[] = [];
-    const topAmtParsed = parseInt(topAmt) || 0;
-    const p = parseBot(botAmt);
-    let ba = p.numPart;
-
-    if (number.length === 2) {
-      const add2 = (n: string) => {
-        if (topAmtParsed > 0) newEntries.push({ number: n, type: '2บน', amount: topAmtParsed });
-        if (ba > 0) newEntries.push({ number: n, type: '2ล่าง', amount: ba });
-      };
-
-      if (p.hasStar) {
-        ba = ba || topAmtParsed;
-        add2(number);
-        const rev = number[1] + number[0];
-        if (rev !== number) add2(rev);
-      } else {
-        add2(number);
-      }
-    } else if (number.length === 3) {
-      const perms = getPerms(number);
-      if (p.hasPlus) {
-        const alt = p.numPart;
-        if (topAmtParsed > 0) {
-          if (alt === 0) {
-            perms.forEach(x => newEntries.push({ number: x, type: '3บน', amount: topAmtParsed }));
-          } else {
-            newEntries.push({ number: number, type: '3บน', amount: topAmtParsed });
-            perms.filter(x => x !== number).forEach(x => newEntries.push({ number: x, type: '3บน', amount: alt }));
-          }
-        }
-      } else {
-        const tod = p.numPart;
-        if (topAmtParsed > 0) newEntries.push({ number, type: '3บน', amount: topAmtParsed });
-        if (tod > 0) newEntries.push({ number, type: '3โต้ด', amount: tod });
-      }
-    }
+    const newEntries = generateEntries(number, topAmt, botAmt);
     
     if (newEntries.length > 0) {
-      setEntries(prev => [...newEntries, ...prev]); // Add to top of list
+      setEntries(prev => [...newEntries, ...prev]);
       setNumber('');
       if (!lockAmt) {
         setTopAmt('');
@@ -135,7 +69,9 @@ export default function KeyingPage() {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, nextFieldId?: string) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (nextFieldId) {
+      if (lockAmt) {
+        addEntry();
+      } else if (nextFieldId) {
         document.getElementById(nextFieldId)?.focus();
       } else {
         addEntry();
@@ -231,9 +167,10 @@ export default function KeyingPage() {
                 type="text"
                 placeholder="บน"
                 value={topAmt}
+                readOnly={lockAmt}
                 onChange={e => setTopAmt(e.target.value.replace(/[^0-9]/g, ''))}
                 onKeyDown={e => handleKeyDown(e, 'input-bot')}
-                className="w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
+                className={`w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             </div>
             <div className="flex-1 flex flex-col gap-1">
@@ -242,9 +179,10 @@ export default function KeyingPage() {
                 type="text"
                 placeholder="ล่าง/โต้ด"
                 value={botAmt}
+                readOnly={lockAmt}
                 onChange={e => setBotAmt(e.target.value.replace(/[^0-9*+]/g, ''))}
                 onKeyDown={e => handleKeyDown(e)}
-                className="w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa]"
+                className={`w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             </div>
           </div>

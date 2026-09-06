@@ -2,23 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import { fetchBills, deleteBill, updateBill, fetchCustomers, Bill, Customer, EntryInput } from '../../lib/api';
+import { generateEntries } from '../../lib/lotto';
+
+type BillWithIndex = Bill & { customerBillIndex: number };
 
 export default function BillsPage() {
-  const [bills, setBills] = useState<Bill[]>([]);
+  const [bills, setBills] = useState<BillWithIndex[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | ''>('');
   const [isLoading, setIsLoading] = useState(true);
   
   // Modal states
-  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [selectedBill, setSelectedBill] = useState<BillWithIndex | null>(null);
   const [editEntries, setEditEntries] = useState<EntryInput[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Keying states for edit modal
+  const [number, setNumber] = useState('');
+  const [topAmt, setTopAmt] = useState('');
+  const [botAmt, setBotAmt] = useState('');
+  const [lockAmt, setLockAmt] = useState(false);
 
   const loadBills = () => {
     setIsLoading(true);
     fetchBills().then(data => {
-      // Sort by newest first
-      setBills(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      // Sort oldest first to calculate index correctly
+      const sorted = data.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const counts: Record<number, number> = {};
+      const withIndex = sorted.map(b => {
+        counts[b.customerId] = (counts[b.customerId] || 0) + 1;
+        return { ...b, customerBillIndex: counts[b.customerId] };
+      });
+      // Sort back to newest first for display
+      setBills(withIndex.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }).catch(err => console.error(err))
       .finally(() => setIsLoading(false));
   };
@@ -44,9 +60,38 @@ export default function BillsPage() {
     }
   };
 
-  const handleBillClick = (bill: Bill) => {
+  const handleBillClick = (bill: BillWithIndex) => {
     setSelectedBill(bill);
     setEditEntries(bill.entries.map(e => ({ number: e.number, type: e.type, amount: e.amount })));
+    setNumber('');
+    setTopAmt('');
+    setBotAmt('');
+  };
+
+  const handleAddEntry = () => {
+    const newEntries = generateEntries(number, topAmt, botAmt);
+    if (newEntries.length > 0) {
+      setEditEntries(prev => [...newEntries, ...prev]);
+      setNumber('');
+      if (!lockAmt) {
+        setTopAmt('');
+        setBotAmt('');
+      }
+      document.getElementById('edit-input-number')?.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, nextFieldId?: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (lockAmt) {
+        handleAddEntry();
+      } else if (nextFieldId) {
+        document.getElementById(nextFieldId)?.focus();
+      } else {
+        handleAddEntry();
+      }
+    }
   };
 
   const handleRemoveEntry = (idx: number) => {
@@ -106,9 +151,8 @@ export default function BillsPage() {
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-[#6c7086] text-xs font-mono">#{bill.id.toString().padStart(4, '0')}</span>
                   <span className="text-[#cdd6f4] font-bold" style={{ color: bill.customer?.tc || '#cdd6f4' }}>
-                    {bill.customer?.name || 'ไม่ทราบชื่อ'}
+                    {bill.customer?.name || 'ไม่ทราบชื่อ'} บิลที่ {bill.customerBillIndex}
                   </span>
                 </div>
                 <div className="text-[#6c7086] text-xs">
@@ -141,13 +185,12 @@ export default function BillsPage() {
       {/* Edit Bill Modal */}
       {selectedBill && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0d1117] border border-[#2a4a6b] rounded-lg w-full max-w-2xl h-[80vh] shadow-2xl flex flex-col">
+          <div className="bg-[#0d1117] border border-[#2a4a6b] rounded-lg w-full max-w-2xl h-[90vh] shadow-2xl flex flex-col">
             <div className="px-6 py-4 border-b border-[#1e2433] flex justify-between items-center bg-[#11151e] rounded-t-lg">
               <div>
-                <h2 className="text-lg font-bold text-[#89b4fa]">รายละเอียดบิล #{selectedBill.id.toString().padStart(4, '0')}</h2>
-                <div className="text-[#cdd6f4] text-sm mt-1">
-                  ลูกค้า: <span className="font-bold text-[#a6e3a1]">{selectedBill.customer?.name}</span>
-                </div>
+                <h2 className="text-lg font-bold text-[#89b4fa]">
+                  รายละเอียด {selectedBill.customer?.name || 'ไม่ทราบชื่อ'} บิลที่ {selectedBill.customerBillIndex}
+                </h2>
               </div>
               <button 
                 onClick={() => setSelectedBill(null)}
@@ -157,7 +200,51 @@ export default function BillsPage() {
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-2">
+            {/* Entry Form */}
+            <div className="p-4 bg-[#11151e] border-b border-[#1e2433]">
+              <div className="flex gap-2">
+                <input 
+                  id="edit-input-number"
+                  type="text" 
+                  maxLength={3}
+                  placeholder="00"
+                  value={number}
+                  onChange={e => setNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                  onKeyDown={e => handleKeyDown(e, 'edit-input-top')}
+                  className="w-24 bg-[#0a0e14] border border-[#2a3244] rounded px-3 py-4 text-[#a6e3a1] font-mono text-2xl text-center outline-none focus:border-[#89b4fa] tracking-widest font-bold"
+                />
+                <div className="flex-1 flex flex-col gap-1 relative">
+                  <label className="absolute -top-6 left-0 text-[10px] text-[#89b4fa] flex items-center gap-1 cursor-pointer select-none bg-[#1e2d3d] px-2 py-0.5 rounded border border-[#2a4a6b]">
+                    <input type="checkbox" checked={lockAmt} onChange={(e) => setLockAmt(e.target.checked)} className="accent-[#89b4fa] w-3 h-3"/>
+                    ล็อคยอด
+                  </label>
+                  <input 
+                    id="edit-input-top"
+                    type="text"
+                    placeholder="บน"
+                    value={topAmt}
+                    readOnly={lockAmt}
+                    onChange={e => setTopAmt(e.target.value.replace(/[^0-9]/g, ''))}
+                    onKeyDown={e => handleKeyDown(e, 'edit-input-bot')}
+                    className={`w-full bg-[#0a0e14] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  />
+                </div>
+                <div className="flex-1 flex flex-col gap-1">
+                  <input 
+                    id="edit-input-bot"
+                    type="text"
+                    placeholder="ล่าง/โต้ด"
+                    value={botAmt}
+                    readOnly={lockAmt}
+                    onChange={e => setBotAmt(e.target.value.replace(/[^0-9*+]/g, ''))}
+                    onKeyDown={e => handleKeyDown(e)}
+                    className={`w-full bg-[#0a0e14] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {editEntries.length === 0 ? (
                 <div className="text-center text-[#6c7086] text-sm mt-10">บิลนี้ไม่มีรายการ (จะถูกลบหากบันทึก)</div>
               ) : (

@@ -1,0 +1,74 @@
+import { EntryInput } from './api';
+
+export const parseBot = (v: string) => {
+  v = v.trim();
+  const hasStar = v.endsWith('*');
+  const hasPlus = v.endsWith('+');
+  const stripped = (hasStar || hasPlus) ? v.slice(0, -1) : v;
+  return {
+    numPart: stripped === '' ? 0 : (parseInt(stripped) || 0),
+    hasStar,
+    hasPlus
+  };
+};
+
+export const getPerms = (n: string) => {
+  if (n.length < 3) return [n];
+  if (n[0] === n[1] && n[1] === n[2]) return [n];
+  const set = new Set<string>();
+  const a = n.split('');
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (j !== i) {
+        for (let k = 0; k < 3; k++) {
+          if (k !== i && k !== j) set.add(a[i] + a[j] + a[k]);
+        }
+      }
+    }
+  }
+  return Array.from(set);
+};
+
+export const generateEntries = (number: string, topAmt: string, botAmt: string): EntryInput[] => {
+  if (!number) return [];
+  
+  const newEntries: EntryInput[] = [];
+  const topAmtParsed = parseInt(topAmt) || 0;
+  const p = parseBot(botAmt);
+  let ba = p.numPart;
+
+  if (number.length === 2) {
+    const add2 = (n: string) => {
+      if (topAmtParsed > 0) newEntries.push({ number: n, type: '2บน', amount: topAmtParsed });
+      if (ba > 0) newEntries.push({ number: n, type: '2ล่าง', amount: ba });
+    };
+
+    if (p.hasStar) {
+      ba = ba || topAmtParsed;
+      add2(number);
+      const rev = number[1] + number[0];
+      if (rev !== number) add2(rev);
+    } else {
+      add2(number);
+    }
+  } else if (number.length === 3) {
+    const perms = getPerms(number);
+    if (p.hasPlus) {
+      const alt = p.numPart;
+      if (topAmtParsed > 0) {
+        if (alt === 0) {
+          perms.forEach(x => newEntries.push({ number: x, type: '3บน', amount: topAmtParsed }));
+        } else {
+          newEntries.push({ number: number, type: '3บน', amount: topAmtParsed });
+          perms.filter(x => x !== number).forEach(x => newEntries.push({ number: x, type: '3บน', amount: alt }));
+        }
+      }
+    } else {
+      const tod = p.numPart;
+      if (topAmtParsed > 0) newEntries.push({ number, type: '3บน', amount: topAmtParsed });
+      if (tod > 0) newEntries.push({ number, type: '3โต้ด', amount: tod });
+    }
+  }
+  
+  return newEntries;
+};
