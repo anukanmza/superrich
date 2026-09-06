@@ -15,14 +15,35 @@ export interface EntryInput {
   amount: number;
 }
 
+export interface Bill {
+  id: number;
+  customerId: number;
+  customer: Customer;
+  total: number;
+  status: string;
+  createdAt: string;
+  entries: {
+    id: number;
+    number: string;
+    type: string;
+    amount: number;
+  }[];
+}
+
+export async function fetchCustomers(): Promise<Customer[]> {
+  const res = await fetch(`${API_BASE}/customers`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch customers');
+  return res.json();
+}
+
 export interface BillInput {
   customerId: number;
   entries: EntryInput[];
 }
 
-export async function fetchCustomers(): Promise<Customer[]> {
-  const res = await fetch(`${API_BASE}/customers`);
-  if (!res.ok) throw new Error('Failed to fetch customers');
+export async function fetchBills(): Promise<Bill[]> {
+  const res = await fetch(`${API_BASE}/bills`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch bills');
   return res.json();
 }
 
