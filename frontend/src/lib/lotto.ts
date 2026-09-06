@@ -81,7 +81,13 @@ export const checkLimit = (
   specificLimits: { num: string, [key: string]: string }[]
 ): boolean => {
   let limit = parseFloat(keeps[type] || '0');
-  const sp = specificLimits.find(x => x.num === number);
+  
+  let searchNums = [number];
+  if (type === '3โต้ด') {
+    searchNums = getPerms(number);
+  }
+
+  const sp = specificLimits.find(x => searchNums.includes(x.num));
   if (sp && sp[type] && sp[type].trim() !== '') {
     limit = parseFloat(sp[type]);
   }

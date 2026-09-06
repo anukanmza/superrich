@@ -66,7 +66,28 @@ export default function CutoutPage() {
 
   const getLimit = (num: string, type: string) => {
     let limit = parseFloat(keeps[type] || '0');
-    const sp = specificLimits.find(x => x.num === num);
+    let searchNums = [num];
+    if (type === '3โต้ด') {
+      import('../../lib/lotto').then(m => searchNums = m.getPerms(num)).catch(() => {});
+      // In cutout it's synchronous, so we'll just implement a quick perms if needed, 
+      // but wait, `num` is already the normalized form for 3โต้ด in cutout.
+      // So let's just check specific limits for any permutations of `num`
+    }
+    
+    // Quick local perm logic for specific limit checks
+    if (type === '3โต้ด' && num.length === 3) {
+      const perms = new Set([
+        num,
+        num[0]+num[2]+num[1],
+        num[1]+num[0]+num[2],
+        num[1]+num[2]+num[0],
+        num[2]+num[0]+num[1],
+        num[2]+num[1]+num[0]
+      ]);
+      searchNums = Array.from(perms);
+    }
+
+    const sp = specificLimits.find(x => searchNums.includes(x.num));
     if (sp && sp[type] && sp[type].trim() !== '') {
       limit = parseFloat(sp[type]);
     }
@@ -77,15 +98,19 @@ export default function CutoutPage() {
   const allRows = useMemo(() => {
     const agg: Record<string, Record<string, number>> = {};
     bills.forEach(b => b.entries.forEach(e => {
-      if (!agg[e.number]) agg[e.number] = {};
-      agg[e.number][e.type] = (agg[e.number][e.type] || 0) + e.amount;
+      let numKey = e.number;
+      if (e.type === '3โต้ด') numKey = e.number.split('').sort().join('');
+      if (!agg[numKey]) agg[numKey] = {};
+      agg[numKey][e.type] = (agg[numKey][e.type] || 0) + e.amount;
     }));
     
     // Agg sent amounts
     const sentAgg: Record<string, Record<string, number>> = {};
     cutoutHistory.forEach(c => {
-      if (!sentAgg[c.num]) sentAgg[c.num] = {};
-      sentAgg[c.num][c.type] = (sentAgg[c.num][c.type] || 0) + c.amount;
+      let numKey = c.num;
+      if (c.type === '3โต้ด') numKey = c.num.split('').sort().join('');
+      if (!sentAgg[numKey]) sentAgg[numKey] = {};
+      sentAgg[numKey][c.type] = (sentAgg[numKey][c.type] || 0) + c.amount;
     });
 
     const rows: CutoutRow[] = [];

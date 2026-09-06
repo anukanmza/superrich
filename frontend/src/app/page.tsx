@@ -69,8 +69,10 @@ export default function KeyingPage() {
   const baseAgg = useMemo(() => {
     const agg: Record<string, Record<string, number>> = {};
     bills.forEach(b => b.entries.forEach(e => {
-      if (!agg[e.number]) agg[e.number] = {};
-      agg[e.number][e.type] = (agg[e.number][e.type] || 0) + e.amount;
+      let numKey = e.number;
+      if (e.type === '3โต้ด') numKey = e.number.split('').sort().join('');
+      if (!agg[numKey]) agg[numKey] = {};
+      agg[numKey][e.type] = (agg[numKey][e.type] || 0) + e.amount;
     }));
     return agg;
   }, [bills]);
@@ -85,12 +87,15 @@ export default function KeyingPage() {
     // To correctly calculate running total from oldest to newest, we iterate from right to left.
     for (let i = entries.length - 1; i >= 0; i--) {
       const e = entries[i];
-      const baseVal = baseAgg[e.number]?.[e.type] || 0;
-      if (!currentAgg[e.number]) currentAgg[e.number] = {};
-      const currentVal = currentAgg[e.number][e.type] || 0;
+      let numKey = e.number;
+      if (e.type === '3โต้ด') numKey = e.number.split('').sort().join('');
+
+      const baseVal = baseAgg[numKey]?.[e.type] || 0;
+      if (!currentAgg[numKey]) currentAgg[numKey] = {};
+      const currentVal = currentAgg[numKey][e.type] || 0;
       
       const newTotal = baseVal + currentVal + e.amount;
-      currentAgg[e.number][e.type] = currentVal + e.amount;
+      currentAgg[numKey][e.type] = currentVal + e.amount;
       
       result[i] = checkLimit(e.number, e.type, newTotal, keeps, specificLimits);
     }
