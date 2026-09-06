@@ -61,11 +61,11 @@ export default function RewardsPage() {
           try { setRates(JSON.parse(settingsData.rates_json)); } catch (e) {}
         }
         if (settingsData.specificRates_json) {
-          try { setSpecificRates(JSON.parse(settingsData.specificRates_json)); } catch (e) {}
+          try { setSpecificRates(JSON.parse(settingsData.specificRates_json) || []); } catch (e) {}
         }
         
         if (settingsData.cutouts_json) {
-          try { setCutoutHistory(JSON.parse(settingsData.cutouts_json)); } catch (e) {}
+          try { setCutoutHistory(JSON.parse(settingsData.cutouts_json) || []); } catch (e) {}
         }
       })
       .catch(console.error)
@@ -104,37 +104,44 @@ export default function RewardsPage() {
   const winningData = useMemo(() => {
     // 1. Calculate Sent Totals grouped by logical number and type
     const sentMap: Record<string, number> = {};
-    cutoutHistory.forEach(batch => {
-      batch.rows.forEach(r => {
-        let numKey = r.num;
-        if (r.type === '3โต้ด') numKey = r.num.split('').sort().join('');
+    (cutoutHistory || []).forEach(batch => {
+      (batch?.rows || []).forEach(r => {
+        if (!r) return;
+        let numKey = r.num || '';
+        if (r.type === '3โต้ด') numKey = numKey.split('').sort().join('');
         const k = `${numKey}|${r.type}`;
-        sentMap[k] = (sentMap[k] || 0) + r.amount;
+        sentMap[k] = (sentMap[k] || 0) + (r.amount || 0);
       });
     });
 
     // 2. Calculate Raw Totals (Total received) grouped by logical number and type
     const rawMap: Record<string, number> = {};
-    bills.forEach(b => {
-      b.entries.forEach(e => {
-        let numKey = e.number;
-        if (e.type === '3โต้ด') numKey = e.number.split('').sort().join('');
+    (bills || []).forEach(b => {
+      (b?.entries || []).forEach(e => {
+        if (!e) return;
+        let numKey = e.number || '';
+        if (e.type === '3โต้ด') numKey = numKey.split('').sort().join('');
         const k = `${numKey}|${e.type}`;
-        rawMap[k] = (rawMap[k] || 0) + e.amount;
+        rawMap[k] = (rawMap[k] || 0) + (e.amount || 0);
       });
     });
 
     // 3. Evaluate winning entries
     const wins: any[] = [];
-    bills.forEach(b => {
-      b.entries.forEach(e => {
-        if (isWinning({ number: e.number, type: e.type }, results)) {
-          let numKey = e.number;
-          if (e.type === '3โต้ด') numKey = e.number.split('').sort().join('');
+    (bills || []).forEach(b => {
+      (b?.entries || []).forEach(e => {
+        if (!e) return;
+        if (isWinning({ number: e.number || '', type: e.type || '' }, results || {})) {
+          let numKey = e.number || '';
+          if (e.type === '3โต้ด') numKey = numKey.split('').sort().join('');
           const k = `${numKey}|${e.type}`;
           
-          const rate = getPrizeRate(e, rates, specificRates);
-          const amt = e.amount;
+          const rate = getPrizeRate(
+            { number: e.number || '', type: e.type || '' }, 
+            rates || {}, 
+            specificRates || []
+          );
+          const amt = e.amount || 0;
           const payout = amt * rate;
           
           const raw = rawMap[k] || 0;

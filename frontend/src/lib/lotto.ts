@@ -13,6 +13,7 @@ export const parseBot = (v: string) => {
 };
 
 export const getPerms = (n: string) => {
+  if (!n) return [];
   if (n.length < 3) return [n];
   if (n[0] === n[1] && n[1] === n[2]) return [n];
   const set = new Set<string>();
@@ -98,7 +99,10 @@ export const isWinning = (
   entry: { number: string, type: string },
   results: { [key: string]: string }
 ): boolean => {
+  if (!entry || !results) return false;
   const { number, type } = entry;
+  if (!number || !type) return false;
+  
   if (type === '2บน') return !!results['2บน'] && number === results['2บน'];
   if (type === '2ล่าง') return !!results['2ล่าง'] && number === results['2ล่าง'];
   if (type === '3บน') return !!results['3บน'] && number === results['3บน'];

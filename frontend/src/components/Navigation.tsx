@@ -6,6 +6,7 @@ export default function Navigation() {
   const pathname = usePathname();
   
   const navItems = [
+    { name: '📌 ภาพรวม', path: '/overview' },
     { name: '⌨️ คีย์เลข', path: '/' },
     { name: '📄 บิลทั้งหมด', path: '/bills' },
     { name: '📊 ยอดรวมเลข', path: '/summary' },
