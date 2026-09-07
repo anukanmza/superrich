@@ -34,7 +34,7 @@ export default function MemberDashboardPage() {
         if (settingsData.keeps_json) try { setKeeps(JSON.parse(settingsData.keeps_json)); } catch (e) {}
         if (settingsData.specificLimits_json) try { setSpecificLimits(JSON.parse(settingsData.specificLimits_json)); } catch (e) {}
         if (settingsData.cutouts_json) try { setCutoutHistory(JSON.parse(settingsData.cutouts_json)); } catch (e) {}
-        if (settingsData.rewards_json) try { setRewards(JSON.parse(settingsData.rewards_json)); } catch (e) {}
+        if (settingsData.results_json) try { setRewards(JSON.parse(settingsData.results_json)); } catch (e) {}
         
         if (settingsData.general_shopName) setShopName(settingsData.general_shopName);
         if (settingsData.general_period) setPeriod(settingsData.general_period);
@@ -278,30 +278,25 @@ export default function MemberDashboardPage() {
             <div className="w-full max-w-md bg-[#11151e] border border-[#f9e2af] rounded-lg p-6 text-center">
               <h2 className="text-xl font-bold text-[#f9e2af] mb-6">🏆 ผลรางวัลประจำงวด</h2>
               
-              <div className="space-y-4">
-                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
-                  <div className="text-sm text-[#6c7086] mb-1">รางวัลที่ 1 (6 ตัว)</div>
-                  <div className="text-3xl font-bold text-[#cdd6f4] tracking-[0.2em]">{rewards['1'] || '-'}</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg col-span-2">
+                  <div className="text-sm text-[#6c7086] mb-1">3 ตัวบน</div>
+                  <div className="text-4xl font-bold text-[#cdd6f4] tracking-[0.2em]">{rewards['3บน'] || '-'}</div>
                 </div>
                 
                 <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
-                  <div className="text-sm text-[#6c7086] mb-1">เลขท้าย 2 ตัว</div>
-                  <div className="text-3xl font-bold text-[#a6e3a1] tracking-[0.2em]">{rewards['2'] || '-'}</div>
+                  <div className="text-sm text-[#6c7086] mb-1">3 ตัวโต้ด</div>
+                  <div className="text-xl font-bold text-[#f9e2af] tracking-[0.1em]">{rewards['3โต้ด'] || '-'}</div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
-                    <div className="text-sm text-[#6c7086] mb-1">เลขหน้า 3 ตัว</div>
-                    <div className="text-xl font-bold text-[#f9e2af] tracking-[0.1em]">
-                      {rewards['3F'] ? rewards['3F'].split(',').join(' | ') : '-'}
-                    </div>
-                  </div>
-                  <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
-                    <div className="text-sm text-[#6c7086] mb-1">เลขท้าย 3 ตัว</div>
-                    <div className="text-xl font-bold text-[#f9e2af] tracking-[0.1em]">
-                      {rewards['3B'] ? rewards['3B'].split(',').join(' | ') : '-'}
-                    </div>
-                  </div>
+                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
+                  <div className="text-sm text-[#6c7086] mb-1">2 ตัวบน</div>
+                  <div className="text-2xl font-bold text-[#a6e3a1] tracking-[0.2em]">{rewards['2บน'] || '-'}</div>
+                </div>
+                
+                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg col-span-2">
+                  <div className="text-sm text-[#6c7086] mb-1">2 ตัวล่าง</div>
+                  <div className="text-3xl font-bold text-[#f38ba8] tracking-[0.2em]">{rewards['2ล่าง'] || '-'}</div>
                 </div>
               </div>
             </div>
