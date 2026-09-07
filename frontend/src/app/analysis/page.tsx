@@ -34,7 +34,12 @@ export default function AnalysisPage() {
   // What-if config
   const [simDiscount, setSimDiscount] = useState<number | null>(null);
   const [simRateAdjust, setSimRateAdjust] = useState<number>(0);
-  const [simLimitAdjust, setSimLimitAdjust] = useState<number>(0);
+  
+  // Specific limit adjusters
+  const [simLimitTop3, setSimLimitTop3] = useState<number>(0);
+  const [simLimitTod3, setSimLimitTod3] = useState<number>(0);
+  const [simLimitTop2, setSimLimitTop2] = useState<number>(0);
+  const [simLimitBot2, setSimLimitBot2] = useState<number>(0);
 
   useEffect(() => {
     setIsLoading(true);
@@ -88,7 +93,14 @@ export default function AnalysisPage() {
 
     Object.keys(entryMap).forEach(k => {
       const e = entryMap[k];
-      let limit = getLimit(e.num, e.type, keeps, specificLimits) + (simLimitAdjust || 0);
+      
+      let limitAdj = 0;
+      if (e.type === '3บน') limitAdj = simLimitTop3 || 0;
+      else if (e.type === '3โต้ด') limitAdj = simLimitTod3 || 0;
+      else if (e.type === '2บน') limitAdj = simLimitTop2 || 0;
+      else if (e.type === '2ล่าง') limitAdj = simLimitBot2 || 0;
+
+      let limit = getLimit(e.num, e.type, keeps, specificLimits) + limitAdj;
       if (limit < 0) limit = 0;
       
       const sent = sentMap[k] || 0;
@@ -117,8 +129,6 @@ export default function AnalysisPage() {
           let isWin = false;
           if (e.type === '3โต้ด' && permsSupport) {
             isWin = getPerms(outStr).includes(e.num);
-          } else if (e.type === '2บน') {
-            isWin = outStr.slice(-2) === e.num;
           } else {
             isWin = outStr === e.num;
           }
@@ -150,11 +160,13 @@ export default function AnalysisPage() {
     };
 
     return {
-      top: runSim(['3บน', '3โต้ด', '2บน'], 3, true),
+      top3: runSim(['3บน'], 3, false),
+      tod3: runSim(['3โต้ด'], 3, true),
+      top2: runSim(['2บน'], 2, false),
       bot2: runSim(['2ล่าง'], 2, false),
       bot3: runSim(['3ล่าง'], 3, false)
     };
-  }, [customers, bills, keeps, specificLimits, cutoutHistory, rates, specificRates, viewMode, simDiscount, simRateAdjust, simLimitAdjust]);
+  }, [customers, bills, keeps, specificLimits, cutoutHistory, rates, specificRates, viewMode, simDiscount, simRateAdjust, simLimitTop3, simLimitTod3, simLimitTop2, simLimitBot2]);
 
   if (isLoading) return <div className="p-8 text-[#cdd6f4]">กำลังโหลดโมเดลวิเคราะห์...</div>;
 
@@ -182,100 +194,132 @@ export default function AnalysisPage() {
       </div>
 
       {/* Settings Sandbox */}
-      <div className="bg-[#11151e] border border-[#2a4a6b] rounded-lg p-4 mb-4 flex flex-wrap gap-6 shrink-0">
-        <div className="flex flex-col">
-          <span className="text-[10px] text-[#89b4fa] font-bold mb-1">🛠 Simulation Config (ลองปรับค่า)</span>
-          <span className="text-[10px] text-[#6c7086] mb-2">ค่าเหล่านี้ใช้จำลองเท่านั้น ไม่กระทบระบบจริง</span>
+      <div className="bg-[#11151e] border border-[#2a4a6b] rounded-lg p-4 mb-4 flex flex-col gap-3 shrink-0">
+        <div className="flex flex-col border-b border-[#2a3244] pb-2">
+          <span className="text-[12px] text-[#89b4fa] font-bold mb-1">🛠 Simulation Config (ลองปรับค่า)</span>
+          <span className="text-[10px] text-[#6c7086]">ค่าเหล่านี้ใช้จำลองเท่านั้น ไม่กระทบระบบจริง</span>
         </div>
-        <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
-          ส่วนลดเฉลี่ย (%):
-          <input 
-            type="number" 
-            className="w-16 bg-[#0d1117] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#a6e3a1]"
-            value={simDiscount === null ? '' : simDiscount}
-            onChange={e => setSimDiscount(e.target.value === '' ? null : Number(e.target.value))}
-            placeholder="ดึงจากลค."
-          />
-        </label>
-        <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
-          ปรับเรทจ่าย (ทุกตัว):
-          <input 
-            type="number" 
-            className="w-16 bg-[#0d1117] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#f9e2af]"
-            value={simRateAdjust}
-            onChange={e => setSimRateAdjust(Number(e.target.value))}
-          />
-        </label>
-        <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
-          ปรับวงเงินเก็บ (ทุกตัว):
-          <input 
-            type="number" 
-            className="w-20 bg-[#0d1117] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#f38ba8]"
-            value={simLimitAdjust}
-            onChange={e => setSimLimitAdjust(Number(e.target.value))}
-          />
-        </label>
+        
+        <div className="flex flex-wrap gap-6 items-center">
+          <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
+            ส่วนลดเฉลี่ย (%):
+            <input 
+              type="number" 
+              className="w-16 bg-[#0d1117] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#a6e3a1]"
+              value={simDiscount === null ? '' : simDiscount}
+              onChange={e => setSimDiscount(e.target.value === '' ? null : Number(e.target.value))}
+              placeholder="ดึงจากลค."
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
+            ปรับเรทจ่าย (ทุกตัว):
+            <input 
+              type="number" 
+              className="w-16 bg-[#0d1117] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#f9e2af]"
+              value={simRateAdjust}
+              onChange={e => setSimRateAdjust(Number(e.target.value))}
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap gap-4 items-center bg-[#0d1117] p-3 rounded border border-[#2a3244]">
+          <span className="text-xs text-[#cdd6f4] mr-2">ปรับวงเงินเก็บ (+/-):</span>
+          <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
+            3บน:
+            <input 
+              type="number" 
+              className="w-20 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#f38ba8]"
+              value={simLimitTop3}
+              onChange={e => setSimLimitTop3(Number(e.target.value))}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
+            3โต้ด:
+            <input 
+              type="number" 
+              className="w-20 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#f38ba8]"
+              value={simLimitTod3}
+              onChange={e => setSimLimitTod3(Number(e.target.value))}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
+            2บน:
+            <input 
+              type="number" 
+              className="w-20 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#f38ba8]"
+              value={simLimitTop2}
+              onChange={e => setSimLimitTop2(Number(e.target.value))}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-[#cdd6f4]">
+            2ล่าง:
+            <input 
+              type="number" 
+              className="w-20 bg-[#11151e] border border-[#2a3244] rounded px-2 py-1 outline-none text-[#f38ba8]"
+              value={simLimitBot2}
+              onChange={e => setSimLimitBot2(Number(e.target.value))}
+            />
+          </label>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {[
-          { title: 'กลุ่ม บน (3บน, 3โต้ด, 2บน)', data: engine.top },
+          { title: 'กลุ่ม 3 บน', data: engine.top3 },
+          { title: 'กลุ่ม 3 โต้ด', data: engine.tod3 },
+          { title: 'กลุ่ม 2 บน', data: engine.top2 },
           { title: 'กลุ่ม 2 ล่าง', data: engine.bot2 },
           { title: 'กลุ่ม 3 ล่าง', data: engine.bot3 }
         ].map((g, i) => (
-          <div key={i} className="bg-[#11151e] border border-[#1e2433] rounded-lg p-4 flex flex-col">
-            <h3 className="font-bold text-[#cdd6f4] mb-4 border-b border-[#1e2433] pb-2">{g.title}</h3>
+          <div key={i} className="bg-[#11151e] border border-[#1e2433] rounded-lg p-3 flex flex-col">
+            <h3 className="font-bold text-[#cdd6f4] mb-3 border-b border-[#1e2433] pb-2 text-center">{g.title}</h3>
             
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-[#0d1117] p-2 rounded border border-[#1e2433]">
-                <div className="text-[10px] text-[#6c7086]">กำไรสูงสุด (Max Profit)</div>
-                <div className="text-lg font-bold text-[#a6e3a1]">฿{g.data.maxProfit ? g.data.maxProfit.toLocaleString(undefined, {maximumFractionDigits:0}) : '0'}</div>
+            <div className="flex flex-col gap-2 mb-3">
+              <div className="bg-[#0d1117] p-2 rounded border border-[#1e2433] flex justify-between items-center">
+                <span className="text-[10px] text-[#6c7086]">พรีเมียม</span>
+                <span className="text-xs font-bold text-[#89b4fa]">฿{g.data.totalPremium ? g.data.totalPremium.toLocaleString(undefined, {maximumFractionDigits:0}) : '0'}</span>
               </div>
-              <div className="bg-[#0d1117] p-2 rounded border border-[#1e2433]">
-                <div className="text-[10px] text-[#6c7086]">เสียสูงสุด (Max Loss)</div>
-                <div className={`text-lg font-bold ${g.data.maxLoss && g.data.maxLoss < 0 ? 'text-[#f38ba8]' : 'text-[#a6e3a1]'}`}>
-                  ฿{g.data.maxLoss ? g.data.maxLoss.toLocaleString(undefined, {maximumFractionDigits:0}) : '0'}
-                </div>
-              </div>
-              <div className="bg-[#0d1117] p-2 rounded border border-[#1e2433]">
-                <div className="text-[10px] text-[#6c7086]">ยอดรับพรีเมียม (เบี้ย)</div>
-                <div className="text-sm font-bold text-[#89b4fa]">฿{g.data.totalPremium ? g.data.totalPremium.toLocaleString(undefined, {maximumFractionDigits:0}) : '0'}</div>
-              </div>
-              <div className="bg-[#0d1117] p-2 rounded border border-[#1e2433]">
-                <div className="text-[10px] text-[#6c7086]">ความเสี่ยง (โอกาสเสียเงิน)</div>
-                <div className={`text-sm font-bold ${g.data.riskPercent > 20 ? 'text-[#f38ba8]' : g.data.riskPercent > 0 ? 'text-[#f9e2af]' : 'text-[#a6e3a1]'}`}>
+              <div className="bg-[#0d1117] p-2 rounded border border-[#1e2433] flex justify-between items-center">
+                <span className="text-[10px] text-[#6c7086]">ความเสี่ยง</span>
+                <span className={`text-xs font-bold ${g.data.riskPercent > 20 ? 'text-[#f38ba8]' : g.data.riskPercent > 0 ? 'text-[#f9e2af]' : 'text-[#a6e3a1]'}`}>
                   {g.data.riskPercent ? g.data.riskPercent.toFixed(1) : '0.0'}%
-                </div>
+                </span>
+              </div>
+              <div className="bg-[#0d1117] p-2 rounded border border-[#1e2433] flex flex-col items-center">
+                <span className="text-[10px] text-[#6c7086]">เสียสูงสุด (Max Loss)</span>
+                <span className={`text-base font-bold ${g.data.maxLoss && g.data.maxLoss < 0 ? 'text-[#f38ba8]' : 'text-[#a6e3a1]'}`}>
+                  ฿{g.data.maxLoss ? g.data.maxLoss.toLocaleString(undefined, {maximumFractionDigits:0}) : '0'}
+                </span>
               </div>
             </div>
 
             <div className="mt-auto">
-              <div className="text-xs font-bold text-[#f38ba8] mb-2 flex items-center gap-1">
-                ⚠️ Hotspots (เลขที่ออกแล้วเราขาดทุน)
+              <div className="text-[10px] font-bold text-[#f38ba8] mb-1 flex items-center justify-center">
+                ⚠️ Hotspots (ขาดทุน)
               </div>
-              <table className="w-full text-[10px]">
-                <thead>
-                  <tr className="text-[#6c7086] border-b border-[#1e2433]">
-                    <th className="text-left font-normal py-1">ถ้าผลออก</th>
-                    <th className="text-right font-normal py-1">ต้องจ่าย</th>
-                    <th className="text-right font-normal py-1">กำไร/ขาดทุน</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {g.data.hotspots.map((h, j) => (
-                    <tr key={j} className="border-b border-[#13171f] hover:bg-[#181825]">
-                      <td className="py-1 text-[#cdd6f4] font-mono tracking-widest">{h.outcome}</td>
-                      <td className="py-1 text-right text-[#cdd6f4]">฿{h.payout.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
-                      <td className={`py-1 text-right font-bold ${h.profit < 0 ? 'text-[#f38ba8]' : 'text-[#a6e3a1]'}`}>
-                        ฿{h.profit.toLocaleString(undefined, {maximumFractionDigits:0})}
-                      </td>
+              <div className="max-h-40 overflow-y-auto">
+                <table className="w-full text-[10px]">
+                  <thead>
+                    <tr className="text-[#6c7086] border-b border-[#1e2433]">
+                      <th className="text-left font-normal py-1">เลข</th>
+                      <th className="text-right font-normal py-1">กำไร/ขาดทุน</th>
                     </tr>
-                  ))}
-                  {g.data.hotspots.length === 0 && (
-                    <tr><td colSpan={3} className="py-2 text-center text-[#45475a]">ไม่มีความเสี่ยง</td></tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {g.data.hotspots.map((h, j) => (
+                      <tr key={j} className="border-b border-[#13171f] hover:bg-[#181825]">
+                        <td className="py-1 text-[#cdd6f4] font-mono tracking-widest">{h.outcome}</td>
+                        <td className={`py-1 text-right font-bold ${h.profit < 0 ? 'text-[#f38ba8]' : 'text-[#a6e3a1]'}`}>
+                          ฿{h.profit.toLocaleString(undefined, {maximumFractionDigits:0})}
+                        </td>
+                      </tr>
+                    ))}
+                    {g.data.hotspots.length === 0 && (
+                      <tr><td colSpan={2} className="py-2 text-center text-[#45475a]">ไม่มีความเสี่ยง</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         ))}
