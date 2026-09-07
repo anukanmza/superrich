@@ -31,6 +31,7 @@ export default function CutoutPage() {
   
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [copyStyle, setCopyStyle] = useState<1 | 2>(1);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
 
   const loadData = () => {
@@ -245,32 +246,70 @@ export default function CutoutPage() {
   };
 
   const generateCopyText = () => {
-    const grouped: Record<string, { top: number, bot: number }> = {};
+    const rows = filteredSelectRows.filter(r => selectedRows.has(r.id));
     
-    filteredSelectRows.forEach(r => {
-      if (selectedRows.has(r.id)) {
-        if (!grouped[r.num]) grouped[r.num] = { top: 0, bot: 0 };
-        if (r.type.includes('บน')) {
-          grouped[r.num].top += r.currentOverage;
-        } else if (r.type.includes('ล่าง') || r.type.includes('โต้ด')) {
-          grouped[r.num].bot += r.currentOverage;
-        }
-      }
-    });
+    if (copyStyle === 1) {
+      // Style 1: Group by Number, canonicalize 2-digits
+      const grouped: Record<string, { top: number, bot: number, tod: number, len: number }> = {};
+      rows.forEach(r => {
+        if (!grouped[r.num]) grouped[r.num] = { top: 0, bot: 0, tod: 0, len: r.num.length };
+        if (r.type.includes('บน')) grouped[r.num].top += r.currentOverage;
+        else if (r.type === '2ล่าง' || r.type === '3ล่าง') grouped[r.num].bot += r.currentOverage;
+        else if (r.type.includes('โต้ด')) grouped[r.num].tod += r.currentOverage;
+      });
 
-    const lines: string[] = [];
-    Object.keys(grouped).forEach(num => {
-      const g = grouped[num];
-      if (g.top > 0 && g.bot > 0) {
-        lines.push(`${num}-${g.top}*${g.bot}`);
-      } else if (g.top > 0) {
-        lines.push(`${num}-${g.top}`);
-      } else if (g.bot > 0) {
-        lines.push(`${num}-0*${g.bot}`);
+      const sortedNums = Object.keys(grouped).sort((a, b) => {
+        const getCanon = (n: string) => n.length === 2 ? (n[0] < n[1] ? n : n[1] + n[0]) : n;
+        const cA = getCanon(a);
+        const cB = getCanon(b);
+        if (cA !== cB) return cA.localeCompare(cB);
+        return a.localeCompare(b);
+      });
+
+      const lines: string[] = [];
+      sortedNums.forEach(num => {
+        const g = grouped[num];
+        if (num.length === 2) {
+          if (g.top > 0 && g.bot > 0) lines.push(`${num}-${g.top}*${g.bot}`);
+          else if (g.top > 0) lines.push(`${num}-${g.top}`);
+          else if (g.bot > 0) lines.push(`${num}-0*${g.bot}`);
+        } else {
+          if (g.top > 0 && g.tod > 0) lines.push(`${num}-${g.top}*${g.tod}`);
+          else if (g.top > 0) lines.push(`${num}-${g.top}`);
+          else if (g.tod > 0) lines.push(`${num}-0*${g.tod}`);
+          else if (g.bot > 0) lines.push(`${num}-ล่าง${g.bot}`);
+        }
+      });
+      return lines.join('\n');
+    } else {
+      // Style 2: Group by Type
+      const topLines: string[] = [];
+      const botLines: string[] = [];
+      const todLines: string[] = [];
+
+      rows.forEach(r => {
+        if (r.type.includes('บน')) topLines.push(`${r.num}-${r.currentOverage}`);
+        else if (r.type.includes('ล่าง')) botLines.push(`${r.num}-${r.currentOverage}`);
+        else if (r.type.includes('โต้ด')) todLines.push(`${r.num}-${r.currentOverage}`);
+      });
+
+      const lines: string[] = [];
+      if (topLines.length > 0) {
+        lines.push('บน');
+        lines.push(...topLines.sort());
+        lines.push('');
       }
-    });
-    
-    return lines.join('\n');
+      if (botLines.length > 0) {
+        lines.push('ล่าง');
+        lines.push(...botLines.sort());
+        lines.push('');
+      }
+      if (todLines.length > 0) {
+        lines.push('โต้ด');
+        lines.push(...todLines.sort());
+      }
+      return lines.join('\n').trim();
+    }
   };
 
   if (isLoading) {
@@ -545,6 +584,29 @@ export default function CutoutPage() {
             <h2 className="text-xl font-bold text-[#89b4fa]">ข้อความสำหรับส่งต่อ</h2>
             <div className="text-sm text-[#6c7086]">คุณสามารถคัดลอกข้อความด้านล่างนี้เพื่อส่งต่อให้เจ้ามือคนอื่นได้ทันที</div>
             
+            <div className="flex gap-4 mb-2">
+              <label className="flex items-center gap-2 text-sm text-[#cdd6f4] cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="copyStyle" 
+                  checked={copyStyle === 1} 
+                  onChange={() => setCopyStyle(1)}
+                  className="accent-[#89b4fa]"
+                />
+                แบบที่ 1 (รวมเลข)
+              </label>
+              <label className="flex items-center gap-2 text-sm text-[#cdd6f4] cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="copyStyle" 
+                  checked={copyStyle === 2} 
+                  onChange={() => setCopyStyle(2)}
+                  className="accent-[#89b4fa]"
+                />
+                แบบที่ 2 (แยกประเภท)
+              </label>
+            </div>
+
             <textarea 
               readOnly 
               value={generateCopyText()} 
