@@ -8,6 +8,7 @@ export default function GeneralSettingsPage() {
   const [period, setPeriod] = useState('16/06/68');
   const [disc, setDisc] = useState('20');
   const [memberPin, setMemberPin] = useState('');
+  const [masterPin, setMasterPin] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -16,6 +17,7 @@ export default function GeneralSettingsPage() {
       if (data.general_period) setPeriod(data.general_period);
       if (data.general_disc) setDisc(data.general_disc);
       if (data.member_pin) setMemberPin(data.member_pin);
+      if (data.master_pin) setMasterPin(data.master_pin);
     }).catch(err => console.error(err));
   }, []);
 
@@ -26,7 +28,8 @@ export default function GeneralSettingsPage() {
         general_shopName: name,
         general_period: period,
         general_disc: disc,
-        member_pin: memberPin
+        member_pin: memberPin,
+        master_pin: masterPin
       });
       alert('บันทึกการตั้งค่าสำเร็จ');
     } catch (err) {
@@ -71,6 +74,22 @@ export default function GeneralSettingsPage() {
               className="w-24 bg-[#11151e] border border-[#2a3244] rounded px-3 py-2 text-[#cdd6f4] outline-none focus:border-[#89b4fa] text-center"
             />
             <span className="text-xs text-[#6c7086]">สำหรับลูกค้าที่ไม่ได้กำหนด</span>
+          </div>
+        </div>
+
+        <h3 className="text-md font-bold text-[#f38ba8] pt-2">ความปลอดภัย (Security)</h3>
+        
+        <div className="flex items-center gap-4 border-b border-[#2a3244] pb-4">
+          <label className="text-sm text-[#f38ba8] w-32 flex-shrink-0">รหัสผ่านเจ้ามือ (Master PIN)</label>
+          <div className="flex-1 flex flex-col gap-2">
+            <input 
+              type="text" 
+              value={masterPin}
+              onChange={e => setMasterPin(e.target.value)}
+              placeholder="ปล่อยว่างเพื่อปิดรหัสผ่าน"
+              className="bg-[#11151e] border border-[#f38ba8] rounded px-3 py-2 text-[#cdd6f4] outline-none focus:border-[#f38ba8] tracking-widest"
+            />
+            <span className="text-xs text-[#6c7086]">รหัสสำหรับเข้าเว็บหลัก ป้องกันคนนอกแอบเข้าดูข้อมูล (สำคัญมาก)</span>
           </div>
         </div>
 
