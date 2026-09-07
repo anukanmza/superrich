@@ -125,7 +125,7 @@ export const getPrizeRate = (
   let searchNums = [number];
   if (type === '3โต้ด') searchNums = getPerms(number);
 
-  const sp = specificRates.find(x => searchNums.includes(x.num));
+  const sp = (specificRates || []).find(x => searchNums.includes(x.num));
   if (sp && sp[type] && sp[type].trim() !== '') {
     rate = parseFloat(sp[type]);
   }
@@ -144,7 +144,7 @@ export const getLimit = (
   let searchNums = [number];
   if (type === '3โต้ด') searchNums = getPerms(number);
 
-  const sp = specificLimits.find(x => searchNums.includes(x.num));
+  const sp = (specificLimits || []).find(x => searchNums.includes(x.num));
   if (sp && sp[type] && sp[type].trim() !== '') {
     limit = parseFloat(sp[type]);
   }

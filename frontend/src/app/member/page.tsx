@@ -33,12 +33,12 @@ export default function MemberDashboardPage() {
     Promise.all([fetchBills(), getSettings()])
       .then(([billsData, settingsData]) => {
         setBills(billsData);
-        if (settingsData.keeps_json) try { setKeeps(JSON.parse(settingsData.keeps_json)); } catch (e) {}
-        if (settingsData.specificLimits_json) try { setSpecificLimits(JSON.parse(settingsData.specificLimits_json)); } catch (e) {}
-        if (settingsData.cutouts_json) try { setCutoutHistory(JSON.parse(settingsData.cutouts_json)); } catch (e) {}
-        if (settingsData.results_json) try { setRewards(JSON.parse(settingsData.results_json)); } catch (e) {}
-        if (settingsData.rates_json) try { setRates(JSON.parse(settingsData.rates_json)); } catch (e) {}
-        if (settingsData.specificRates_json) try { setSpecificRates(JSON.parse(settingsData.specificRates_json)); } catch (e) {}
+        if (settingsData.keeps_json) try { setKeeps(JSON.parse(settingsData.keeps_json) || {}); } catch (e) {}
+        if (settingsData.specificLimits_json) try { setSpecificLimits(JSON.parse(settingsData.specificLimits_json) || []); } catch (e) {}
+        if (settingsData.cutouts_json) try { setCutoutHistory(JSON.parse(settingsData.cutouts_json) || []); } catch (e) {}
+        if (settingsData.results_json) try { setRewards(JSON.parse(settingsData.results_json) || {}); } catch (e) {}
+        if (settingsData.rates_json) try { setRates(JSON.parse(settingsData.rates_json) || {}); } catch (e) {}
+        if (settingsData.specificRates_json) try { setSpecificRates(JSON.parse(settingsData.specificRates_json) || []); } catch (e) {}
         
         if (settingsData.general_shopName) setShopName(settingsData.general_shopName);
         if (settingsData.general_period) setPeriod(settingsData.general_period);
