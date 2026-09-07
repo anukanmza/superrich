@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchBills, getSettings, Bill } from '../../lib/api';
-import { getLimit } from '../../lib/lotto';
+import { getLimit, isWinning, getPrizeRate } from '../../lib/lotto';
 
 const ALL_TYPES = ['3บน', '3โต้ด', '2บน', '2ล่าง', '3ล่าง'];
 
@@ -13,6 +13,8 @@ export default function MemberDashboardPage() {
   const [specificLimits, setSpecificLimits] = useState<any[]>([]);
   const [cutoutHistory, setCutoutHistory] = useState<any[]>([]);
   const [rewards, setRewards] = useState<Record<string, string>>({});
+  const [rates, setRates] = useState<Record<string, string>>({});
+  const [specificRates, setSpecificRates] = useState<any[]>([]);
   
   const [pinRequired, setPinRequired] = useState(false);
   const [correctPin, setCorrectPin] = useState('');
@@ -35,6 +37,8 @@ export default function MemberDashboardPage() {
         if (settingsData.specificLimits_json) try { setSpecificLimits(JSON.parse(settingsData.specificLimits_json)); } catch (e) {}
         if (settingsData.cutouts_json) try { setCutoutHistory(JSON.parse(settingsData.cutouts_json)); } catch (e) {}
         if (settingsData.results_json) try { setRewards(JSON.parse(settingsData.results_json)); } catch (e) {}
+        if (settingsData.rates_json) try { setRates(JSON.parse(settingsData.rates_json)); } catch (e) {}
+        if (settingsData.specificRates_json) try { setSpecificRates(JSON.parse(settingsData.specificRates_json)); } catch (e) {}
         
         if (settingsData.general_shopName) setShopName(settingsData.general_shopName);
         if (settingsData.general_period) setPeriod(settingsData.general_period);
@@ -157,6 +161,25 @@ export default function MemberDashboardPage() {
   const filterTotalLimit = filteredRows.reduce((s, r) => s + r.limit, 0);
   const filterTotalAvailable = filteredRows.reduce((s, r) => s + r.available, 0);
 
+  const { totalKeepGlobal, totalPayoutGlobal, netProfitGlobal } = useMemo(() => {
+    let tKeep = 0;
+    let tPayout = 0;
+    
+    rows.forEach(r => {
+      tKeep += r.keep;
+      if (isWinning({ number: r.num, type: r.type }, rewards)) {
+        const rate = getPrizeRate({ number: r.num, type: r.type }, rates, specificRates);
+        tPayout += (r.keep * rate);
+      }
+    });
+    
+    return {
+      totalKeepGlobal: tKeep,
+      totalPayoutGlobal: tPayout,
+      netProfitGlobal: tKeep - tPayout
+    };
+  }, [rows, rewards, rates, specificRates]);
+
   const hasRewards = Object.keys(rewards).length > 0;
 
   return (
@@ -273,35 +296,62 @@ export default function MemberDashboardPage() {
           </div>
         </>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="flex-1 flex flex-col items-center overflow-auto pb-4">
           {hasRewards ? (
-            <div className="w-full max-w-md bg-[#11151e] border border-[#f9e2af] rounded-lg p-6 text-center">
-              <h2 className="text-xl font-bold text-[#f9e2af] mb-6">🏆 ผลรางวัลประจำงวด</h2>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg col-span-2">
-                  <div className="text-sm text-[#6c7086] mb-1">3 ตัวบน</div>
-                  <div className="text-4xl font-bold text-[#cdd6f4] tracking-[0.2em]">{rewards['3บน'] || '-'}</div>
-                </div>
+            <div className="w-full max-w-md space-y-6">
+              <div className="bg-[#11151e] border border-[#f9e2af] rounded-lg p-6 text-center shadow-lg">
+                <h2 className="text-xl font-bold text-[#f9e2af] mb-6">🏆 ผลรางวัลประจำงวด</h2>
                 
-                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
-                  <div className="text-sm text-[#6c7086] mb-1">3 ตัวโต้ด</div>
-                  <div className="text-xl font-bold text-[#f9e2af] tracking-[0.1em]">{rewards['3โต้ด'] || '-'}</div>
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg col-span-2">
+                    <div className="text-sm text-[#6c7086] mb-1">3 ตัวบน</div>
+                    <div className="text-4xl font-bold text-[#cdd6f4] tracking-[0.2em]">{rewards['3บน'] || '-'}</div>
+                  </div>
+                  
+                  <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
+                    <div className="text-sm text-[#6c7086] mb-1">3 ตัวโต้ด</div>
+                    <div className="text-xl font-bold text-[#f9e2af] tracking-[0.1em]">{rewards['3โต้ด'] || '-'}</div>
+                  </div>
 
-                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
-                  <div className="text-sm text-[#6c7086] mb-1">2 ตัวบน</div>
-                  <div className="text-2xl font-bold text-[#a6e3a1] tracking-[0.2em]">{rewards['2บน'] || '-'}</div>
+                  <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg">
+                    <div className="text-sm text-[#6c7086] mb-1">2 ตัวบน</div>
+                    <div className="text-2xl font-bold text-[#a6e3a1] tracking-[0.2em]">{rewards['2บน'] || '-'}</div>
+                  </div>
+                  
+                  <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg col-span-2">
+                    <div className="text-sm text-[#6c7086] mb-1">2 ตัวล่าง</div>
+                    <div className="text-3xl font-bold text-[#f38ba8] tracking-[0.2em]">{rewards['2ล่าง'] || '-'}</div>
+                  </div>
                 </div>
+              </div>
+
+              <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-6 shadow-lg">
+                <h2 className="text-lg font-bold text-[#89b4fa] mb-4 text-center">💰 สรุปผลประกอบการสุทธิ</h2>
                 
-                <div className="bg-[#0d1117] border border-[#2a3244] p-4 rounded-lg col-span-2">
-                  <div className="text-sm text-[#6c7086] mb-1">2 ตัวล่าง</div>
-                  <div className="text-3xl font-bold text-[#f38ba8] tracking-[0.2em]">{rewards['2ล่าง'] || '-'}</div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center bg-[#0d1117] px-4 py-3 rounded-lg border border-[#2a3244]">
+                    <span className="text-sm text-[#6c7086]">ยอดรับสุทธิ (ยอดเก็บ)</span>
+                    <span className="font-bold text-[#a6e3a1]">฿{totalKeepGlobal.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center bg-[#0d1117] px-4 py-3 rounded-lg border border-[#2a3244]">
+                    <span className="text-sm text-[#6c7086]">ยอดถูกรางวัลรวม</span>
+                    <span className="font-bold text-[#f38ba8]">฿{totalPayoutGlobal.toLocaleString()}</span>
+                  </div>
+
+                  <div className={`flex justify-between items-center px-4 py-4 rounded-lg border-2 ${netProfitGlobal >= 0 ? 'bg-[#1a3a20] border-[#2d6b36]' : 'bg-[#3d1820] border-[#6b2a36]'}`}>
+                    <span className={`text-sm font-bold ${netProfitGlobal >= 0 ? 'text-[#a6e3a1]' : 'text-[#f38ba8]'}`}>
+                      {netProfitGlobal >= 0 ? 'กำไรสุทธิ' : 'ขาดทุนสุทธิ'}
+                    </span>
+                    <span className={`text-xl font-bold tracking-wider ${netProfitGlobal >= 0 ? 'text-[#a6e3a1]' : 'text-[#f38ba8]'}`}>
+                      {netProfitGlobal >= 0 ? '+' : ''}{netProfitGlobal.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-center p-8 bg-[#11151e] border border-[#2a3244] rounded-lg max-w-md w-full">
+            <div className="text-center p-8 bg-[#11151e] border border-[#2a3244] rounded-lg max-w-md w-full mt-10">
               <div className="text-4xl mb-4">⏳</div>
               <h2 className="text-xl font-bold text-[#cdd6f4] mb-2">ผลรางวัลยังไม่ออก</h2>
               <p className="text-[#6c7086] text-sm">กรุณากลับมาตรวจสอบอีกครั้งในภายหลัง</p>
