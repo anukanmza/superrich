@@ -43,6 +43,33 @@ export default function ArchiveDetailPage() {
     try { r = JSON.parse(archive.results || '{}'); } catch (e) {}
     try { s = JSON.parse(archive.settings || '{}'); } catch (e) {}
 
+    // Process Bills index
+    const sortedBills = b.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const counts: Record<number, number> = {};
+    b = sortedBills.map(bill => {
+      counts[bill.customerId] = (counts[bill.customerId] || 0) + 1;
+      return { ...bill, customerBillIndex: counts[bill.customerId] };
+    }).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Process Cutouts Grouping
+    const groupedCutouts: any[] = [];
+    const cutoutMap = new Map();
+    c.forEach((item: any) => {
+      if (!cutoutMap.has(item.batchId)) {
+        cutoutMap.set(item.batchId, {
+          batchId: item.batchId,
+          date: item.date,
+          time: item.time,
+          amount: 0,
+          items: []
+        });
+        groupedCutouts.push(cutoutMap.get(item.batchId));
+      }
+      const batch = cutoutMap.get(item.batchId);
+      batch.amount += (item.amount || 0);
+      batch.items.push(item);
+    });
+
     const generalDisc = parseFloat(s.general_disc || fallbackSettings?.general_disc || '0');
     const rates = s.rates_json ? JSON.parse(s.rates_json) : (fallbackSettings?.rates_json ? JSON.parse(fallbackSettings.rates_json) : {});
     const specificRates = s.specificRates_json ? JSON.parse(s.specificRates_json) : (fallbackSettings?.specificRates_json ? JSON.parse(fallbackSettings.specificRates_json) : []);
@@ -72,16 +99,14 @@ export default function ArchiveDetailPage() {
       });
     });
 
-    c.forEach((batch: any) => {
-      totalSent += (batch.amount || 0);
-      (batch.items || []).forEach((item: any) => {
-        let numKey = item.num;
-        if (item.type === '3โต้ด') numKey = numKey.split('').sort().join('');
-        const k = `${numKey}|${item.type}`;
+    c.forEach((item: any) => {
+      totalSent += (item.amount || 0);
+      let numKey = item.num;
+      if (item.type === '3โต้ด') numKey = numKey.split('').sort().join('');
+      const k = `${numKey}|${item.type}`;
 
-        if (!sentMap[k]) sentMap[k] = 0;
-        sentMap[k] += (item.amount || 0);
-      });
+      if (!sentMap[k]) sentMap[k] = 0;
+      sentMap[k] += (item.amount || 0);
     });
 
     let totalPayoutOverall = 0;
@@ -131,9 +156,9 @@ export default function ArchiveDetailPage() {
 
     return {
       bills: b,
-      cutouts: c,
+      cutouts: groupedCutouts,
       rewards: r,
-      winningEntries: wins.sort((a, b) => b.payout - a.payout),
+      winningEntries: wins.sort((a: any, b: any) => b.payout - a.payout),
       stats: {
         billsCount: b.length,
         cutoutsCount: c.length,
@@ -243,7 +268,7 @@ export default function ArchiveDetailPage() {
                     <span className="text-[#f9e2af] font-bold">รอบที่ {i+1}</span>
                     <span className="text-[#f38ba8] font-bold">฿{(c.amount || 0).toLocaleString()}</span>
                   </div>
-                  <div className="text-xs text-[#6c7086]">{new Date(c.cutAt).toLocaleString('th-TH')}</div>
+                  <div className="text-xs text-[#6c7086] mb-2">{c.date} {c.time}</div>
                   <div className="text-xs text-[#6c7086] mt-1">จำนวน {(c.items || []).length} รายการ</div>
                 </div>
               ))}
@@ -369,7 +394,7 @@ export default function ArchiveDetailPage() {
               <button onClick={() => setSelectedCutout(null)} className="text-[#6c7086] hover:text-[#f38ba8] text-xl">&times;</button>
             </div>
             <div className="p-4 overflow-y-auto flex-1">
-              <p className="text-[#a6adc8] mb-4 text-xs">เวลาตัดส่ง: {new Date(selectedCutout.cutAt).toLocaleString('th-TH')}</p>
+              <p className="text-[#a6adc8] mb-4 text-xs">เวลาตัดส่ง: {selectedCutout.date} {selectedCutout.time}</p>
               <div className="space-y-2">
                 {(selectedCutout.items || []).map((item: any, idx: number) => (
                   <div key={idx} className="flex justify-between border-b border-[#1e2433] pb-2 text-sm">
