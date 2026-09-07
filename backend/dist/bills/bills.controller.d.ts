@@ -40,4 +40,51 @@ export declare class BillsController {
         createdAt: Date;
         status: string;
     }>;
+    getArchives(): Promise<{
+        id: number;
+        createdAt: Date;
+        period: string;
+    }[]>;
+    getArchiveById(id: string): Promise<{
+        id: number;
+        bills: string;
+        createdAt: Date;
+        period: string;
+        cutouts: string;
+        results: string;
+    } | null>;
+    archiveCurrentPeriod(data: {
+        periodName: string;
+        cutoutsJson: string;
+        resultsJson: string;
+    }): Promise<{
+        id: number;
+        bills: string;
+        createdAt: Date;
+        period: string;
+        cutouts: string;
+        results: string;
+    }>;
+    remove(id: string): Promise<{
+        id: number;
+        customerId: number;
+        total: number;
+        createdAt: Date;
+        status: string;
+    }>;
+    update(id: string, data: any): Promise<{
+        entries: {
+            number: string;
+            id: number;
+            type: string;
+            amount: number;
+            billId: number;
+        }[];
+    } & {
+        id: number;
+        customerId: number;
+        total: number;
+        createdAt: Date;
+        status: string;
+    }>;
 }

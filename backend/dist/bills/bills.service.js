@@ -37,6 +37,67 @@ let BillsService = class BillsService {
             },
         });
     }
+    async remove(id) {
+        await this.prisma.entry.deleteMany({
+            where: { billId: id },
+        });
+        return this.prisma.bill.delete({
+            where: { id },
+        });
+    }
+    async update(id, data) {
+        const total = data.entries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
+        return this.prisma.$transaction(async (prisma) => {
+            await prisma.entry.deleteMany({
+                where: { billId: id },
+            });
+            return prisma.bill.update({
+                where: { id },
+                data: {
+                    total,
+                    entries: {
+                        create: data.entries,
+                    },
+                },
+                include: {
+                    entries: true,
+                },
+            });
+        });
+    }
+    async archiveCurrentPeriod(periodName, cutoutsJson, resultsJson) {
+        const allBills = await this.findAll();
+        const archive = await this.prisma.periodArchive.create({
+            data: {
+                period: periodName,
+                bills: JSON.stringify(allBills),
+                cutouts: cutoutsJson,
+                results: resultsJson,
+            }
+        });
+        await this.prisma.$transaction([
+            this.prisma.entry.deleteMany({}),
+            this.prisma.bill.deleteMany({}),
+        ]);
+        return archive;
+    }
+    async getArchives() {
+        return this.prisma.periodArchive.findMany({
+            select: {
+                id: true,
+                period: true,
+                createdAt: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            }
+        });
+    }
+    async getArchiveById(id) {
+        return this.prisma.periodArchive.findUnique({
+            where: { id }
+        });
+    }
 };
 BillsService = __decorate([
     Injectable(),

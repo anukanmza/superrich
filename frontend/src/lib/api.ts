@@ -110,3 +110,25 @@ export async function updateSettings(data: Record<string, any>) {
   if (!res.ok) throw new Error('Failed to update settings');
   return res.json();
 }
+
+export async function getArchives() {
+  const res = await fetch(`${API_BASE}/bills/archives`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch archives');
+  return res.json();
+}
+
+export async function getArchiveById(id: number) {
+  const res = await fetch(`${API_BASE}/bills/archives/${id}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch archive');
+  return res.json();
+}
+
+export async function archiveCurrentPeriod(periodName: string, cutoutsJson: string, resultsJson: string) {
+  const res = await fetch(`${API_BASE}/bills/archive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ periodName, cutoutsJson, resultsJson }),
+  });
+  if (!res.ok) throw new Error('Failed to archive period');
+  return res.json();
+}

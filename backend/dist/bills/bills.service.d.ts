@@ -43,4 +43,49 @@ export declare class BillsService {
         createdAt: Date;
         status: string;
     }>;
+    remove(id: number): Promise<{
+        id: number;
+        customerId: number;
+        total: number;
+        createdAt: Date;
+        status: string;
+    }>;
+    update(id: number, data: {
+        entries: any[];
+    }): Promise<{
+        entries: {
+            number: string;
+            id: number;
+            type: string;
+            amount: number;
+            billId: number;
+        }[];
+    } & {
+        id: number;
+        customerId: number;
+        total: number;
+        createdAt: Date;
+        status: string;
+    }>;
+    archiveCurrentPeriod(periodName: string, cutoutsJson: string, resultsJson: string): Promise<{
+        id: number;
+        bills: string;
+        createdAt: Date;
+        period: string;
+        cutouts: string;
+        results: string;
+    }>;
+    getArchives(): Promise<{
+        id: number;
+        createdAt: Date;
+        period: string;
+    }[]>;
+    getArchiveById(id: number): Promise<{
+        id: number;
+        bills: string;
+        createdAt: Date;
+        period: string;
+        cutouts: string;
+        results: string;
+    } | null>;
 }

@@ -15,6 +15,7 @@ export default function Navigation() {
     { name: '🏆 ผลรางวัล', path: '/rewards' },
     { name: '📒 สรุปยอดลูกค้า', path: '/customer-summary' },
     { name: '💾 บันทึกและลบข้อมูล', path: '/close-period' },
+    { name: '🗄️ ประวัติงวดย้อนหลัง', path: '/archives' },
     { name: '⚙️ ตั้งค่า', path: '/settings' },
   ];
 

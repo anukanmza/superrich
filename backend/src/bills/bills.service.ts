@@ -67,4 +67,46 @@ export class BillsService {
       });
     });
   }
+
+  async archiveCurrentPeriod(periodName: string, cutoutsJson: string, resultsJson: string) {
+    // Get all bills
+    const allBills = await this.findAll();
+
+    // Create archive
+    const archive = await this.prisma.periodArchive.create({
+      data: {
+        period: periodName,
+        bills: JSON.stringify(allBills),
+        cutouts: cutoutsJson,
+        results: resultsJson,
+      }
+    });
+
+    // Clear active data in a transaction
+    await this.prisma.$transaction([
+      this.prisma.entry.deleteMany({}),
+      this.prisma.bill.deleteMany({}),
+    ]);
+
+    return archive;
+  }
+
+  async getArchives() {
+    return this.prisma.periodArchive.findMany({
+      select: {
+        id: true,
+        period: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      }
+    });
+  }
+
+  async getArchiveById(id: number) {
+    return this.prisma.periodArchive.findUnique({
+      where: { id }
+    });
+  }
 }

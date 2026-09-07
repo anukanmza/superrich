@@ -15,6 +15,21 @@ export class BillsController {
     return this.billsService.create(data);
   }
 
+  @Get('archives')
+  getArchives() {
+    return this.billsService.getArchives();
+  }
+
+  @Get('archives/:id')
+  getArchiveById(@Param('id') id: string) {
+    return this.billsService.getArchiveById(+id);
+  }
+
+  @Post('archive')
+  archiveCurrentPeriod(@Body() data: { periodName: string, cutoutsJson: string, resultsJson: string }) {
+    return this.billsService.archiveCurrentPeriod(data.periodName, data.cutoutsJson, data.resultsJson);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.billsService.remove(+id);

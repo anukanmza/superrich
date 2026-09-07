@@ -12,19 +12,52 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [inputPin, setInputPin] = useState('');
   const [pinError, setPinError] = useState(false);
 
+  const [period, setPeriod] = useState('');
+  const [totalRecv, setTotalRecv] = useState(0);
+  const [totalSent, setTotalSent] = useState(0);
+  const [totalKeep, setTotalKeep] = useState(0);
+
   useEffect(() => {
-    import('../lib/api').then(({ getSettings }) => {
-      getSettings().then(settings => {
-        if (settings.master_pin && settings.master_pin.trim() !== '') {
-          setMasterPin(settings.master_pin);
-          const savedAuth = sessionStorage.getItem('master_auth');
-          if (savedAuth === 'true') {
+    import('../lib/api').then(({ getSettings, fetchBills }) => {
+      const loadData = () => {
+        Promise.all([getSettings(), fetchBills()]).then(([settings, billsData]) => {
+          if (settings.master_pin && settings.master_pin.trim() !== '') {
+            setMasterPin(settings.master_pin);
+            const savedAuth = sessionStorage.getItem('master_auth');
+            if (savedAuth === 'true') {
+              setIsAuthenticated(true);
+            }
+          } else {
             setIsAuthenticated(true);
           }
-        } else {
-          setIsAuthenticated(true);
-        }
-      }).catch(console.error).finally(() => setIsLoading(false));
+
+          if (settings.general_period) setPeriod(settings.general_period);
+
+          let recv = 0;
+          billsData.forEach(b => {
+            (b.entries || []).forEach(e => {
+              recv += (e.amount || 0);
+            });
+          });
+
+          let sent = 0;
+          let cutouts: any[] = [];
+          if (settings.cutouts_json) {
+            try { cutouts = JSON.parse(settings.cutouts_json) || []; } catch (e) {}
+          }
+          cutouts.forEach(c => {
+            sent += (c.amount || 0);
+          });
+
+          setTotalRecv(recv);
+          setTotalSent(sent);
+          setTotalKeep(Math.max(0, recv - sent));
+        }).catch(console.error).finally(() => setIsLoading(false));
+      };
+
+      loadData();
+      const interval = setInterval(loadData, 5000);
+      return () => clearInterval(interval);
     });
   }, []);
 
@@ -77,14 +110,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <>
       {/* Topbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#0d1117] border-b border-[#1e2433]">
-        <div className="text-[#89b4fa] font-bold tracking-wide">◈ LOTTO DEALER PRO</div>
+        <div className="text-[#89b4fa] font-bold tracking-wide hidden sm:block">◈ LOTTO DEALER PRO</div>
+        <div className="text-[#89b4fa] font-bold tracking-wide sm:hidden">◈ LDP</div>
         <div className="bg-[#1e2d3d] text-[#89b4fa] px-3 py-1 rounded text-xs font-bold border border-[#2a4a6b]">
-          งวด 16/06/68
+          งวด {period || '-'}
         </div>
-        <div className="text-xs text-[#6c7086] flex gap-3">
-          <span>รับ:<b className="text-[#cdd6f4]"> ฿0</b></span>
-          <span>ส่ง:<b className="text-[#cdd6f4]"> ฿0</b></span>
-          <span>เก็บ:<b className="text-[#cdd6f4]"> ฿0</b></span>
+        <div className="text-[10px] sm:text-xs text-[#6c7086] flex gap-2 sm:gap-3">
+          <span>รับ:<b className="text-[#cdd6f4]"> ฿{totalRecv.toLocaleString()}</b></span>
+          <span>ส่ง:<b className="text-[#cdd6f4]"> ฿{totalSent.toLocaleString()}</b></span>
+          <span>เก็บ:<b className="text-[#cdd6f4]"> ฿{totalKeep.toLocaleString()}</b></span>
         </div>
       </div>
 

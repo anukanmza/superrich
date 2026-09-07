@@ -41,3 +41,12 @@ model Setting {
   key   String @unique
   value String // JSON string
 }
+
+model PeriodArchive {
+  id        Int      @id @default(autoincrement())
+  period    String
+  bills     String   // JSON string
+  cutouts   String   // JSON string
+  results   String   // JSON string
+  createdAt DateTime @default(now())
+}
