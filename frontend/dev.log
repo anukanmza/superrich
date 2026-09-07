@@ -8,3 +8,63 @@
 ✓ Ready in 346ms
 ✓ Running next.config.ts took 93ms
 
+ GET /member 200 in 1744ms (next.js: 1644ms, application-code: 100ms)
+ GET /member 200 in 218ms (next.js: 141ms, application-code: 77ms)
+ GET /settings 200 in 646ms (next.js: 533ms, application-code: 113ms)
+ GET /settings 200 in 649ms (next.js: 528ms, application-code: 121ms)
+ GET /bills 200 in 685ms (next.js: 583ms, application-code: 102ms)
+ GET /settings 200 in 684ms (next.js: 572ms, application-code: 113ms)
+ GET /bills 200 in 693ms (next.js: 593ms, application-code: 100ms)
+ GET /settings 200 in 692ms (next.js: 595ms, application-code: 97ms)
+[browser] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+[browser] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+[browser] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+[browser] React has detected a change in the order of Hooks called by MemberDashboardPage. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+1. useState                   useState
+2. useState                   useState
+3. useState                   useState
+4. useState                   useState
+5. useState                   useState
+6. useState                   useState
+7. useState                   useState
+8. useState                   useState
+9. useState                   useState
+10. useState                  useState
+11. useState                  useState
+12. useState                  useState
+13. useState                  useState
+14. useState                  useState
+15. useState                  useState
+16. useState                  useState
+17. useState                  useState
+18. useState                  useState
+19. useEffect                 useEffect
+20. useMemo                   useMemo
+21. undefined                 useMemo
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 
+    at MemberDashboardPage (src/app/member/page.tsx:164:74)
+  162 |   const filterTotalAvailable = filteredRows.reduce((s, r) => s + r.available, 0);
+  163 |
+> 164 |   const { totalKeepGlobal, totalPayoutGlobal, netProfitGlobal } = useMemo(() => {
+      |                                                                          ^
+  165 |     let tKeep = 0;
+  166 |     let tPayout = 0;
+  167 |      (src/app/member/page.tsx:164:74)
+[browser] Uncaught Error: Rendered more hooks than during the previous render.
+    at MemberDashboardPage (src/app/member/page.tsx:164:74)
+  162 |   const filterTotalAvailable = filteredRows.reduce((s, r) => s + r.available, 0);
+  163 |
+> 164 |   const { totalKeepGlobal, totalPayoutGlobal, netProfitGlobal } = useMemo(() => {
+      |                                                                          ^
+  165 |     let tKeep = 0;
+  166 |     let tPayout = 0;
+  167 |     
+[browser] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON

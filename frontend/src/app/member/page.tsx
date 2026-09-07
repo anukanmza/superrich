@@ -118,6 +118,25 @@ export default function MemberDashboardPage() {
     else setSelectedTypes(new Set(ALL_TYPES));
   };
 
+  const { totalKeepGlobal, totalPayoutGlobal, netProfitGlobal } = useMemo(() => {
+    let tKeep = 0;
+    let tPayout = 0;
+    
+    rows.forEach(r => {
+      tKeep += r.keep;
+      if (isWinning({ number: r.num, type: r.type }, rewards)) {
+        const rate = getPrizeRate({ number: r.num, type: r.type }, rates, specificRates);
+        tPayout += (r.keep * rate);
+      }
+    });
+    
+    return {
+      totalKeepGlobal: tKeep,
+      totalPayoutGlobal: tPayout,
+      netProfitGlobal: tKeep - tPayout
+    };
+  }, [rows, rewards, rates, specificRates]);
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-full bg-[#0a0e14] text-[#cdd6f4]">กำลังโหลดข้อมูล...</div>;
   }
@@ -160,25 +179,6 @@ export default function MemberDashboardPage() {
   const filterTotalKeep = filteredRows.reduce((s, r) => s + r.keep, 0);
   const filterTotalLimit = filteredRows.reduce((s, r) => s + r.limit, 0);
   const filterTotalAvailable = filteredRows.reduce((s, r) => s + r.available, 0);
-
-  const { totalKeepGlobal, totalPayoutGlobal, netProfitGlobal } = useMemo(() => {
-    let tKeep = 0;
-    let tPayout = 0;
-    
-    rows.forEach(r => {
-      tKeep += r.keep;
-      if (isWinning({ number: r.num, type: r.type }, rewards)) {
-        const rate = getPrizeRate({ number: r.num, type: r.type }, rates, specificRates);
-        tPayout += (r.keep * rate);
-      }
-    });
-    
-    return {
-      totalKeepGlobal: tKeep,
-      totalPayoutGlobal: tPayout,
-      netProfitGlobal: tKeep - tPayout
-    };
-  }, [rows, rewards, rates, specificRates]);
 
   const hasRewards = Object.keys(rewards).length > 0;
 
