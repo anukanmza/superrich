@@ -26,6 +26,7 @@ export default function MemberDashboardPage() {
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set(['3บน']));
   const [shopName, setShopName] = useState('แดชบอร์ดสมาชิก');
   const [period, setPeriod] = useState('');
+  const [discount, setDiscount] = useState('0');
   const [activeMenu, setActiveMenu] = useState<'keep' | 'rewards'>('keep');
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function MemberDashboardPage() {
         
         if (settingsData.general_shopName) setShopName(settingsData.general_shopName);
         if (settingsData.general_period) setPeriod(settingsData.general_period);
+        if (settingsData.general_disc) setDiscount(settingsData.general_disc);
 
         if (settingsData.member_pin && settingsData.member_pin.trim() !== '') {
           setPinRequired(true);
@@ -118,7 +120,7 @@ export default function MemberDashboardPage() {
     else setSelectedTypes(new Set(ALL_TYPES));
   };
 
-  const { totalKeepGlobal, totalPayoutGlobal, netProfitGlobal } = useMemo(() => {
+  const { totalKeepGlobal, totalPayoutGlobal, netProfitGlobal, discountAmtGlobal, afterDiscountGlobal } = useMemo(() => {
     let tKeep = 0;
     let tPayout = 0;
     
@@ -129,13 +131,19 @@ export default function MemberDashboardPage() {
         tPayout += (r.keep * rate);
       }
     });
+
+    const discPercent = parseFloat(discount) || 0;
+    const discAmt = tKeep * (discPercent / 100);
+    const afterDisc = tKeep - discAmt;
     
     return {
       totalKeepGlobal: tKeep,
       totalPayoutGlobal: tPayout,
-      netProfitGlobal: tKeep - tPayout
+      discountAmtGlobal: discAmt,
+      afterDiscountGlobal: afterDisc,
+      netProfitGlobal: afterDisc - tPayout
     };
-  }, [rows, rewards, rates, specificRates]);
+  }, [rows, rewards, rates, specificRates, discount]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-full bg-[#0a0e14] text-[#cdd6f4]">กำลังโหลดข้อมูล...</div>;
@@ -331,12 +339,22 @@ export default function MemberDashboardPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center bg-[#0d1117] px-4 py-3 rounded-lg border border-[#2a3244]">
                     <span className="text-sm text-[#6c7086]">ยอดรับสุทธิ (ยอดเก็บ)</span>
-                    <span className="font-bold text-[#a6e3a1]">฿{totalKeepGlobal.toLocaleString()}</span>
+                    <span className="font-bold text-[#cdd6f4]">฿{totalKeepGlobal.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center bg-[#0d1117] px-4 py-3 rounded-lg border border-[#2a3244]">
+                    <span className="text-sm text-[#6c7086]">หักส่วนลด ({parseFloat(discount) || 0}%)</span>
+                    <span className="font-bold text-[#f38ba8]">-฿{discountAmtGlobal.toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-[#11151e] px-4 py-3 rounded-lg border border-[#89b4fa]">
+                    <span className="text-sm font-bold text-[#89b4fa]">ยอดหลังหักส่วนลด</span>
+                    <span className="font-bold text-[#a6e3a1]">฿{afterDiscountGlobal.toLocaleString()}</span>
                   </div>
                   
                   <div className="flex justify-between items-center bg-[#0d1117] px-4 py-3 rounded-lg border border-[#2a3244]">
                     <span className="text-sm text-[#6c7086]">ยอดถูกรางวัลรวม</span>
-                    <span className="font-bold text-[#f38ba8]">฿{totalPayoutGlobal.toLocaleString()}</span>
+                    <span className="font-bold text-[#f38ba8]">-฿{totalPayoutGlobal.toLocaleString()}</span>
                   </div>
 
                   <div className={`flex justify-between items-center px-4 py-4 rounded-lg border-2 ${netProfitGlobal >= 0 ? 'bg-[#1a3a20] border-[#2d6b36]' : 'bg-[#3d1820] border-[#6b2a36]'}`}>
