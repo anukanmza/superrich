@@ -11,6 +11,7 @@ export default function Navigation() {
     { name: '📄 บิลทั้งหมด', path: '/bills' },
     { name: '📊 ยอดรวมเลข', path: '/summary' },
     { name: '✂️ คัดเลขส่งออก', path: '/cutout' },
+    { name: '📈 วิเคราะห์', path: '/analysis' },
     { name: '🏆 ผลรางวัล', path: '/rewards' },
     { name: '📒 สรุปยอดลูกค้า', path: '/customer-summary' },
     { name: '💾 บันทึกและลบข้อมูล', path: '/close-period' },
