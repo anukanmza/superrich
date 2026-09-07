@@ -52,7 +52,17 @@ export declare class BillsController {
         period: string;
         cutouts: string;
         results: string;
+        settings: string;
     } | null>;
+    removeArchive(id: string): Promise<{
+        id: number;
+        bills: string;
+        createdAt: Date;
+        period: string;
+        cutouts: string;
+        results: string;
+        settings: string;
+    }>;
     archiveCurrentPeriod(data: {
         periodName: string;
         cutoutsJson: string;
@@ -64,6 +74,7 @@ export declare class BillsController {
         period: string;
         cutouts: string;
         results: string;
+        settings: string;
     }>;
     remove(id: string): Promise<{
         id: number;

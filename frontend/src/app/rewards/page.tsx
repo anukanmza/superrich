@@ -349,7 +349,7 @@ export default function RewardsPage() {
               </div>
             ) : (
               <div className="overflow-x-auto bg-[#11151e] border border-[#2a3244] rounded">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-[#181825] text-[#a6adc8] border-b border-[#2a3244]">
                     <tr>
                       <th className="p-3">รหัสบิล</th>
@@ -416,7 +416,7 @@ export default function RewardsPage() {
               </div>
             ) : (
               <div className="overflow-x-auto bg-[#11151e] border border-[#2a3244] rounded">
-                <table className="w-full text-right text-sm">
+                <table className="w-full text-right text-sm whitespace-nowrap">
                   <thead className="bg-[#181825] text-[#a6adc8] border-b border-[#2a3244]">
                     <tr>
                       <th className="p-3 text-left">ประเภท</th>

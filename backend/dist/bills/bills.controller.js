@@ -29,6 +29,9 @@ let BillsController = class BillsController {
     getArchiveById(id) {
         return this.billsService.getArchiveById(+id);
     }
+    removeArchive(id) {
+        return this.billsService.removeArchive(+id);
+    }
     archiveCurrentPeriod(data) {
         return this.billsService.archiveCurrentPeriod(data.periodName, data.cutoutsJson, data.resultsJson);
     }
@@ -65,6 +68,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], BillsController.prototype, "getArchiveById", null);
+__decorate([
+    Delete('archives/:id'),
+    __param(0, Param('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BillsController.prototype, "removeArchive", null);
 __decorate([
     Post('archive'),
     __param(0, Body()),

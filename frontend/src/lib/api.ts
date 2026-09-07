@@ -132,3 +132,11 @@ export async function archiveCurrentPeriod(periodName: string, cutoutsJson: stri
   if (!res.ok) throw new Error('Failed to archive period');
   return res.json();
 }
+
+export async function deleteArchive(id: number) {
+  const res = await fetch(`${API_BASE}/bills/archives/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete archive');
+  return res.json();
+}

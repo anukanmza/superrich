@@ -74,7 +74,7 @@ export class BillsService {
 
     // Get all settings
     const allSettings = await this.prisma.setting.findMany();
-    const settingsObj = {};
+    const settingsObj: Record<string, string> = {};
     allSettings.forEach(s => {
       settingsObj[s.key] = s.value;
     });
@@ -114,6 +114,12 @@ export class BillsService {
 
   async getArchiveById(id: number) {
     return this.prisma.periodArchive.findUnique({
+      where: { id }
+    });
+  }
+
+  async removeArchive(id: number) {
+    return this.prisma.periodArchive.delete({
       where: { id }
     });
   }

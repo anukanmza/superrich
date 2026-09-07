@@ -121,7 +121,7 @@ export default function KeepLimitsPage() {
       <div className="text-xs text-[#6c7086] mb-4">เว้นว่าง = ใช้วงเงินรวมของประเภทนั้น</div>
       
       <div className="bg-[#0a0e14] border border-[#1e2433] rounded-lg p-4 max-w-4xl overflow-x-auto mb-6 max-h-[600px] overflow-y-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm whitespace-nowrap">
           <thead>
             <tr className="text-[#6c7086] text-xs bg-[#0d1117] uppercase">
               <th className="font-normal py-2 px-2 text-left">เลข</th>

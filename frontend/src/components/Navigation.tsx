@@ -20,7 +20,7 @@ export default function Navigation() {
   ];
 
   return (
-    <div className="flex bg-[#0d1117] border-b border-[#1e2433] px-2 py-2 gap-2">
+    <div className="flex bg-[#0d1117] border-b border-[#1e2433] px-2 py-2 gap-2 overflow-x-auto whitespace-nowrap shrink-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {navItems.map((item) => (
         <Link 
           key={item.path} 

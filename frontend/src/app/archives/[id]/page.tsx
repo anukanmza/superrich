@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'next/navigation';
-import { getArchiveById, getSettings } from '../../../lib/api';
+import { useParams, useRouter } from 'next/navigation';
+import { getArchiveById, getSettings, deleteArchive } from '../../../lib/api';
 import { isWinning, getPrizeRate } from '../../../lib/lotto';
 import Link from 'next/link';
 
 export default function ArchiveDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [archive, setArchive] = useState<any>(null);
   const [fallbackSettings, setFallbackSettings] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'bills' | 'cutouts' | 'rewards'>('overview');
@@ -17,6 +19,20 @@ export default function ArchiveDetailPage() {
   // Modals
   const [selectedBill, setSelectedBill] = useState<any>(null);
   const [selectedCutout, setSelectedCutout] = useState<any>(null);
+
+  const handleDelete = async () => {
+    if (window.confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลงวดนี้ทิ้ง? การกระทำนี้ไม่สามารถกู้คืนได้')) {
+      setIsDeleting(true);
+      try {
+        await deleteArchive(Number(id));
+        alert('ลบข้อมูลเรียบร้อยแล้ว');
+        router.push('/archives');
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+        setIsDeleting(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -161,7 +177,7 @@ export default function ArchiveDetailPage() {
       winningEntries: wins.sort((a: any, b: any) => b.payout - a.payout),
       stats: {
         billsCount: b.length,
-        cutoutsCount: c.length,
+        cutoutsCount: groupedCutouts.length,
         resultsCount: Object.keys(r).length,
         totalRecvRaw,
         totalRecvDiscounted,
@@ -186,9 +202,18 @@ export default function ArchiveDetailPage() {
 
   return (
     <div className="p-6 h-full overflow-y-auto flex flex-col relative">
-      <div className="mb-6 flex items-center gap-4 shrink-0">
-        <Link href="/archives" className="text-[#6c7086] hover:text-[#cdd6f4]">← กลับ</Link>
-        <h1 className="text-xl font-bold text-[#89b4fa]">รายละเอียดงวด {archive.period}</h1>
+      <div className="mb-6 flex justify-between items-center shrink-0">
+        <div className="flex items-center gap-4">
+          <Link href="/archives" className="text-[#6c7086] hover:text-[#cdd6f4]">← กลับ</Link>
+          <h1 className="text-xl font-bold text-[#89b4fa]">รายละเอียดงวด {archive.period}</h1>
+        </div>
+        <button 
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="bg-[#1e1215] text-[#f38ba8] hover:bg-[#f38ba8] hover:text-[#1e1215] border border-[#3a2a2a] px-3 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50"
+        >
+          {isDeleting ? 'กำลังลบ...' : '🗑️ ลบงวดนี้ทิ้ง'}
+        </button>
       </div>
 
       {/* Tabs */}

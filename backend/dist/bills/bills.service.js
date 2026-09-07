@@ -67,12 +67,18 @@ let BillsService = class BillsService {
     }
     async archiveCurrentPeriod(periodName, cutoutsJson, resultsJson) {
         const allBills = await this.findAll();
+        const allSettings = await this.prisma.setting.findMany();
+        const settingsObj = {};
+        allSettings.forEach(s => {
+            settingsObj[s.key] = s.value;
+        });
         const archive = await this.prisma.periodArchive.create({
             data: {
                 period: periodName,
                 bills: JSON.stringify(allBills),
                 cutouts: cutoutsJson,
                 results: resultsJson,
+                settings: JSON.stringify(settingsObj)
             }
         });
         await this.prisma.$transaction([
@@ -95,6 +101,11 @@ let BillsService = class BillsService {
     }
     async getArchiveById(id) {
         return this.prisma.periodArchive.findUnique({
+            where: { id }
+        });
+    }
+    async removeArchive(id) {
+        return this.prisma.periodArchive.delete({
             where: { id }
         });
     }

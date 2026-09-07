@@ -288,7 +288,7 @@ export default function OverviewPage() {
 
         {/* Table */}
         <div className="border border-[#1e2433] rounded-lg bg-[#0d1117] overflow-auto flex-1 min-h-0">
-          <table className="w-full text-xs min-w-[800px] border-collapse">
+          <table className="w-full text-xs min-w-[800px] border-collapse whitespace-nowrap">
             <thead className="sticky top-0 bg-[#11151e] z-10 shadow">
               <tr>
                 <th className="p-2 border-b border-[#1e2433] text-[#6c7086] font-normal text-center w-12">#</th>

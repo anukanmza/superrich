@@ -74,6 +74,7 @@ export declare class BillsService {
         period: string;
         cutouts: string;
         results: string;
+        settings: string;
     }>;
     getArchives(): Promise<{
         id: number;
@@ -87,5 +88,15 @@ export declare class BillsService {
         period: string;
         cutouts: string;
         results: string;
+        settings: string;
     } | null>;
+    removeArchive(id: number): Promise<{
+        id: number;
+        bills: string;
+        createdAt: Date;
+        period: string;
+        cutouts: string;
+        results: string;
+        settings: string;
+    }>;
 }

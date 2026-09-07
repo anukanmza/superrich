@@ -413,7 +413,7 @@ export default function CutoutPage() {
             </div>
             
             <div className="flex-1 overflow-auto">
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="sticky top-0 bg-[#1e2433] text-[#a6adc8] shadow">
                   <tr>
                     <th className="p-3 w-12 text-center">
@@ -484,7 +484,7 @@ export default function CutoutPage() {
                 </div>
              </div>
              <div className="flex-1 overflow-auto">
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="sticky top-0 bg-[#1e2433] text-[#a6adc8] shadow">
                   <tr>
                     <th className="p-3">วันที่/เวลา</th>
@@ -535,7 +535,7 @@ export default function CutoutPage() {
                 </button>
              </div>
              <div className="flex-1 overflow-auto">
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="sticky top-0 bg-[#1e2433] text-[#a6adc8] shadow">
                   <tr>
                     <th className="p-3">เลข</th>

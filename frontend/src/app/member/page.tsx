@@ -275,23 +275,23 @@ export default function MemberDashboardPage() {
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-[#0d1117] shadow-sm">
                 <tr>
-                  <th className="py-3 px-4 text-left text-[#6c7086] font-normal">เลข <span className="text-[10px] ml-1">(ประเภท)</span></th>
-                  <th className="py-3 px-4 text-right text-[#a6e3a1] font-normal w-1/4">ยอดเก็บ</th>
-                  <th className="py-3 px-4 text-right text-[#f9e2af] font-normal w-1/4">ว่างรับได้</th>
-                  <th className="py-3 px-4 text-right text-[#6c7086] font-normal w-1/4 hidden sm:table-cell">วงเงิน</th>
+                  <th className="py-3 px-4 text-left text-[#6c7086] font-normal whitespace-nowrap">เลข <span className="text-[10px] ml-1">(ประเภท)</span></th>
+                  <th className="py-3 px-4 text-right text-[#a6e3a1] font-normal w-1/4 whitespace-nowrap">ยอดเก็บ</th>
+                  <th className="py-3 px-4 text-right text-[#f9e2af] font-normal w-1/4 whitespace-nowrap">ว่างรับได้</th>
+                  <th className="py-3 px-4 text-right text-[#6c7086] font-normal w-1/4 hidden sm:table-cell whitespace-nowrap">วงเงิน</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRows.map((r, i) => (
                   <tr key={i} className="border-b border-[#1e2433] hover:bg-[#181825]">
-                    <td className="py-3 px-4 text-[#cdd6f4] font-bold text-lg font-mono">
+                    <td className="py-3 px-4 text-[#cdd6f4] font-bold text-lg font-mono whitespace-nowrap">
                       {r.num} <span className="text-[10px] text-[#6c7086] ml-2 font-sans">{r.type}</span>
                     </td>
-                    <td className="py-3 px-4 text-right text-[#a6e3a1] font-bold">฿{r.keep.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right text-[#f9e2af] font-bold">
+                    <td className="py-3 px-4 text-right text-[#a6e3a1] font-bold whitespace-nowrap">฿{r.keep.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right text-[#f9e2af] font-bold whitespace-nowrap">
                       {r.available > 0 ? `฿${r.available.toLocaleString()}` : <span className="text-[#f38ba8] text-xs">เต็มแล้ว</span>}
                     </td>
-                    <td className="py-3 px-4 text-right text-[#6c7086] hidden sm:table-cell">฿{r.limit.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right text-[#6c7086] hidden sm:table-cell whitespace-nowrap">฿{r.limit.toLocaleString()}</td>
                   </tr>
                 ))}
                 {filteredRows.length === 0 && (
