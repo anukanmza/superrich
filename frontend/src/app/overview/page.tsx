@@ -172,6 +172,11 @@ export default function OverviewPage() {
   const totalSent = baseRows.reduce((s, r) => s + r.sent, 0);
   const totalPending = baseRows.reduce((s, r) => s + r.pending, 0);
   
+  const filterTotalRaw = rows.reduce((s, r) => s + r.rawTotal, 0);
+  const filterTotalKeep = rows.reduce((s, r) => s + r.keep, 0);
+  const filterTotalSent = rows.reduce((s, r) => s + r.sent, 0);
+  const filterTotalPending = rows.reduce((s, r) => s + r.pending, 0);
+
   const counts: Record<string, number> = {};
   ALL_TYPES.forEach(t => counts[t] = 0);
   rows.forEach(r => { if (counts[r.type] !== undefined) counts[r.type]++; });
@@ -232,22 +237,42 @@ export default function OverviewPage() {
         </div>
 
         {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 shrink-0">
+          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-2 flex justify-between items-center">
+            <div className="text-[10px] text-[#6c7086]">ยอดรับรวม (ทั้งหมด)</div>
+            <div className="text-[13px] font-bold text-[#cdd6f4]">฿{totalRaw.toLocaleString()}</div>
+          </div>
+          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-2 flex justify-between items-center">
+            <div className="text-[10px] text-[#6c7086]">ยอดเลขเก็บรวม (ทั้งหมด)</div>
+            <div className="text-[13px] font-bold text-[#cdd6f4]">฿{totalKeep.toLocaleString()}</div>
+          </div>
+          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-2 flex justify-between items-center">
+            <div className="text-[10px] text-[#6c7086]">ยอดส่งออกรวม (ทั้งหมด)</div>
+            <div className="text-[13px] font-bold text-[#f38ba8]">฿{totalSent.toLocaleString()}</div>
+          </div>
+          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-2 flex justify-between items-center">
+            <div className="text-[10px] text-[#6c7086]">ยอดรอส่งออก (ทั้งหมด)</div>
+            <div className="text-[13px] font-bold text-[#f9e2af]">฿{totalPending.toLocaleString()}</div>
+          </div>
+        </div>
+        
+        {/* Filtered Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3 shrink-0">
-          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-3">
-            <div className="text-[10px] text-[#6c7086] mb-1">ยอดรับรวม</div>
-            <div className="text-[17px] font-bold text-[#a6e3a1]">฿{totalRaw.toLocaleString()}</div>
+          <div className="bg-[#11151e] border border-[#89b4fa] rounded-lg p-3">
+            <div className="text-[10px] text-[#89b4fa] mb-1">ยอดรับรวม (ที่เลือก)</div>
+            <div className="text-[17px] font-bold text-[#a6e3a1]">฿{filterTotalRaw.toLocaleString()}</div>
           </div>
-          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-3">
-            <div className="text-[10px] text-[#6c7086] mb-1">ยอดเลขเก็บรวม</div>
-            <div className="text-[17px] font-bold text-[#a6e3a1]">฿{totalKeep.toLocaleString()}</div>
+          <div className="bg-[#11151e] border border-[#89b4fa] rounded-lg p-3">
+            <div className="text-[10px] text-[#89b4fa] mb-1">ยอดเลขเก็บรวม (ที่เลือก)</div>
+            <div className="text-[17px] font-bold text-[#a6e3a1]">฿{filterTotalKeep.toLocaleString()}</div>
           </div>
-          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-3">
-            <div className="text-[10px] text-[#6c7086] mb-1">ยอดส่งออกรวม</div>
-            <div className="text-[17px] font-bold text-[#f38ba8]">฿{totalSent.toLocaleString()}</div>
+          <div className="bg-[#11151e] border border-[#89b4fa] rounded-lg p-3">
+            <div className="text-[10px] text-[#89b4fa] mb-1">ยอดส่งออกรวม (ที่เลือก)</div>
+            <div className="text-[17px] font-bold text-[#f38ba8]">฿{filterTotalSent.toLocaleString()}</div>
           </div>
-          <div className="bg-[#11151e] border border-[#2a3244] rounded-lg p-3">
-            <div className="text-[10px] text-[#6c7086] mb-1">ยอดรอส่งออก</div>
-            <div className="text-[17px] font-bold text-[#f9e2af]">฿{totalPending.toLocaleString()}</div>
+          <div className="bg-[#11151e] border border-[#89b4fa] rounded-lg p-3">
+            <div className="text-[10px] text-[#89b4fa] mb-1">ยอดรอส่งออก (ที่เลือก)</div>
+            <div className="text-[17px] font-bold text-[#f9e2af]">฿{filterTotalPending.toLocaleString()}</div>
           </div>
         </div>
 
