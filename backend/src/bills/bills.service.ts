@@ -72,6 +72,13 @@ export class BillsService {
     // Get all bills
     const allBills = await this.findAll();
 
+    // Get all settings
+    const allSettings = await this.prisma.setting.findMany();
+    const settingsObj = {};
+    allSettings.forEach(s => {
+      settingsObj[s.key] = s.value;
+    });
+
     // Create archive
     const archive = await this.prisma.periodArchive.create({
       data: {
@@ -79,6 +86,7 @@ export class BillsService {
         bills: JSON.stringify(allBills),
         cutouts: cutoutsJson,
         results: resultsJson,
+        settings: JSON.stringify(settingsObj)
       }
     });
 
