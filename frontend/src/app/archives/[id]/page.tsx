@@ -1,19 +1,23 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { getArchiveById } from '../../../lib/api';
 import Link from 'next/link';
 
-export default function ArchiveDetailPage({ params }: { params: { id: string } }) {
+export default function ArchiveDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
   const [archive, setArchive] = useState<any>(null);
 
   useEffect(() => {
-    getArchiveById(Number(params.id))
+    if (!id) return;
+    getArchiveById(Number(id))
       .then(setArchive)
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, [params.id]);
+  }, [id]);
 
   const stats = useMemo(() => {
     if (!archive) return null;
