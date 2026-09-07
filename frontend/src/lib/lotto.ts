@@ -132,3 +132,21 @@ export const getPrizeRate = (
   
   return rate;
 };
+
+export const getLimit = (
+  number: string, 
+  type: string, 
+  keeps: Record<string, string>, 
+  specificLimits: { num: string, [key: string]: string }[]
+): number => {
+  let limit = parseFloat(keeps[type] || '999999999');
+  
+  let searchNums = [number];
+  if (type === '3โต้ด') searchNums = getPerms(number);
+
+  const sp = specificLimits.find(x => searchNums.includes(x.num));
+  if (sp && sp[type] && sp[type].trim() !== '') {
+    limit = parseFloat(sp[type]);
+  }
+  return limit;
+};
