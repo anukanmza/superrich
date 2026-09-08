@@ -191,7 +191,7 @@ export default function MemberDashboardPage() {
   const hasRewards = Object.keys(rewards).length > 0;
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0e14] overflow-hidden p-4 md:p-6 lg:max-w-4xl lg:mx-auto w-full">
+    <div className="flex flex-col min-h-screen bg-[#0a0e14] p-4 md:p-6 lg:max-w-4xl lg:mx-auto w-full">
       <div className="flex items-center justify-between bg-[#11151e] border border-[#2a3244] rounded-lg p-4 mb-4 shrink-0">
         <div>
           <h1 className="text-lg font-bold text-[#f9e2af]">📊 {shopName}</h1>

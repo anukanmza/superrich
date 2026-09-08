@@ -73,7 +73,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   };
   
   if (pathname.startsWith('/member')) {
-    return <main className="flex-1 overflow-hidden h-full">{children}</main>;
+    return <main className="flex-1">{children}</main>;
   }
 
   if (isLoading) {
@@ -126,7 +126,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Navigation />
 
       {/* Content Area */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1">
         {children}
       </main>
     </>

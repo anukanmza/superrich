@@ -178,10 +178,10 @@ export default function KeyingPage() {
   const totalAmount = entries.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col lg:flex-row h-full">
       {/* Left Panel: Keying */}
-      <div className="w-1/2 p-4 border-r border-[#1e2433] flex flex-col">
-        <div className="mb-6">
+      <div className="w-full lg:w-1/2 p-4 border-b lg:border-b-0 lg:border-r border-[#1e2433] flex flex-col min-h-[300px]">
+        <div className="mb-4 lg:mb-6">
           <label className="block text-xs text-[#6c7086] mb-2 uppercase tracking-wide">ลูกค้า</label>
           <select 
             value={selectedCustomerId} 
@@ -194,7 +194,7 @@ export default function KeyingPage() {
           </select>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4 lg:mb-6">
           <label className="block text-xs text-[#6c7086] mb-2 uppercase tracking-wide">คีย์รายการ</label>
           <div className="flex gap-2">
             <input 
@@ -205,7 +205,7 @@ export default function KeyingPage() {
               value={number}
               onChange={e => setNumber(e.target.value.replace(/[^0-9]/g, ''))}
               onKeyDown={e => handleKeyDown(e, 'input-top')}
-              className="w-24 bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#a6e3a1] font-mono text-2xl text-center outline-none focus:border-[#89b4fa] tracking-widest font-bold"
+              className="w-20 md:w-24 bg-[#11151e] border border-[#2a3244] rounded px-2 py-3 lg:py-4 text-[#a6e3a1] font-mono text-xl lg:text-2xl text-center outline-none focus:border-[#89b4fa] tracking-widest font-bold"
             />
             <div className="flex-1 flex flex-col gap-1 relative">
               <label className="absolute -top-6 left-0 text-[10px] text-[#89b4fa] flex items-center gap-1 cursor-pointer select-none bg-[#1e2d3d] px-2 py-0.5 rounded border border-[#2a4a6b]">
@@ -220,7 +220,7 @@ export default function KeyingPage() {
                 readOnly={lockAmt}
                 onChange={e => setTopAmt(e.target.value.replace(/[^0-9]/g, ''))}
                 onKeyDown={e => handleKeyDown(e, 'input-bot')}
-                className={`w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full bg-[#11151e] border border-[#2a3244] rounded px-2 py-3 lg:py-4 text-[#cdd6f4] text-lg lg:text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             </div>
             <div className="flex-1 flex flex-col gap-1">
@@ -232,22 +232,25 @@ export default function KeyingPage() {
                 readOnly={lockAmt}
                 onChange={e => setBotAmt(e.target.value.replace(/[^0-9*+]/g, ''))}
                 onKeyDown={e => handleKeyDown(e)}
-                className={`w-full bg-[#11151e] border border-[#2a3244] rounded px-3 py-4 text-[#cdd6f4] text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full bg-[#11151e] border border-[#2a3244] rounded px-2 py-3 lg:py-4 text-[#cdd6f4] text-lg lg:text-xl text-center outline-none focus:border-[#89b4fa] ${lockAmt ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             </div>
           </div>
         </div>
 
         <div className="mt-auto flex flex-col gap-2">
-          <div className="bg-[#1e2433] rounded-md p-3 text-sm text-[#a6e3a1] glass">
+          <div className="bg-[#1e2433] rounded-md p-3 text-sm text-[#a6e3a1] glass hidden lg:block">
             <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเลื่อนช่อง ถ้ายู่ช่องสุดท้ายจะเพิ่มรายการ กด <span className="bg-[#0a0e14] px-2 py-0.5 rounded border border-[#2a3244]">F4</span> เพื่อบันทึกบิล
+          </div>
+          <div className="bg-[#1e2433] rounded-md p-2 text-xs text-[#a6e3a1] glass lg:hidden text-center">
+            <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเพิ่มรายการ หรือกดบันทึก
           </div>
         </div>
       </div>
 
       {/* Right Panel: List & Sum */}
-      <div className="w-1/2 flex flex-col bg-[#0d1117]">
-        <div className="px-4 py-3 border-b border-[#1e2433] flex justify-between items-center bg-[#11151e]">
+      <div className="w-full lg:w-1/2 flex flex-col bg-[#0d1117] flex-1 lg:flex-none h-[500px] lg:h-auto">
+        <div className="px-4 py-3 border-b border-[#1e2433] flex justify-between items-center bg-[#11151e] shrink-0">
           <span className="text-sm text-[#cdd6f4] font-bold">รายการ ({entries.length})</span>
           <span className="text-xs text-[#6c7086]">F4 = บันทึกบิล</span>
         </div>
