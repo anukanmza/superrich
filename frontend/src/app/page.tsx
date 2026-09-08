@@ -178,9 +178,9 @@ export default function KeyingPage() {
   const totalAmount = entries.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="flex flex-col lg:flex-row h-full">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-92px)]">
       {/* Left Panel: Keying */}
-      <div className="w-full lg:w-1/2 p-4 border-b lg:border-b-0 lg:border-r border-[#1e2433] flex flex-col min-h-[300px]">
+      <div className="w-full lg:w-1/2 p-4 border-b lg:border-b-0 lg:border-r border-[#1e2433] flex flex-col shrink-0">
         <div className="mb-4 lg:mb-6">
           <label className="block text-xs text-[#6c7086] mb-2 uppercase tracking-wide">ลูกค้า</label>
           <select 
@@ -238,18 +238,21 @@ export default function KeyingPage() {
           </div>
         </div>
 
-        <div className="mt-auto flex flex-col gap-2">
-          <div className="bg-[#1e2433] rounded-md p-3 text-sm text-[#a6e3a1] glass hidden lg:block">
+        {/* Mobile Tips (Directly below inputs) */}
+        <div className="bg-[#1e2433] rounded-md p-2 text-xs text-[#a6e3a1] glass lg:hidden text-center">
+          <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเพิ่มรายการ หรือกดบันทึก
+        </div>
+
+        {/* Desktop Tips (Pinned to bottom) */}
+        <div className="mt-auto hidden lg:flex flex-col gap-2">
+          <div className="bg-[#1e2433] rounded-md p-3 text-sm text-[#a6e3a1] glass">
             <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเลื่อนช่อง ถ้ายู่ช่องสุดท้ายจะเพิ่มรายการ กด <span className="bg-[#0a0e14] px-2 py-0.5 rounded border border-[#2a3244]">F4</span> เพื่อบันทึกบิล
-          </div>
-          <div className="bg-[#1e2433] rounded-md p-2 text-xs text-[#a6e3a1] glass lg:hidden text-center">
-            <span className="font-bold text-[#89b4fa]">เคล็ดลับ:</span> กด Enter เพื่อเพิ่มรายการ หรือกดบันทึก
           </div>
         </div>
       </div>
 
       {/* Right Panel: List & Sum */}
-      <div className="w-full lg:w-1/2 flex flex-col bg-[#0d1117] flex-1 lg:flex-none h-[500px] lg:h-auto">
+      <div className="w-full lg:w-1/2 flex flex-col bg-[#0d1117] flex-1 min-h-0">
         <div className="px-4 py-3 border-b border-[#1e2433] flex justify-between items-center bg-[#11151e] shrink-0">
           <span className="text-sm text-[#cdd6f4] font-bold">รายการ ({entries.length})</span>
           <span className="text-xs text-[#6c7086]">F4 = บันทึกบิล</span>
@@ -281,7 +284,7 @@ export default function KeyingPage() {
           )}
         </div>
 
-        <div className="bg-[#11151e] border-t border-[#1e2433] p-4 flex justify-between items-center">
+        <div className="bg-[#11151e] border-t border-[#1e2433] p-4 flex justify-between items-center shrink-0">
           <div className="text-sm text-[#6c7086]">
             ยอดรวม: <span className="text-[#a6e3a1] text-xl font-bold ml-2">฿{totalAmount}</span>
           </div>
