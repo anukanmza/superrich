@@ -68,3 +68,114 @@ SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
   167 |     
 [browser] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
 SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+✓ Finished writing to filesystem cache in 10.0min
+✓ Finished writing to filesystem cache in 4.1min
+✓ Finished writing to filesystem cache in 3.4min
+✓ Finished writing to filesystem cache in 2.5min
+✓ Finished writing to filesystem cache in 11.8s
+✓ Finished writing to filesystem cache in 3.1min
+✓ Finished writing to filesystem cache in 65s
+✓ Finished writing to filesystem cache in 3.5min
+✓ Finished writing to filesystem cache in 57s
+✓ Finished writing to filesystem cache in 3.5min
+✓ Finished writing to filesystem cache in 16.9s
+✓ Finished writing to filesystem cache in 2.9min
+✓ Finished writing to filesystem cache in 3.1min
+✓ Finished writing to filesystem cache in 24.1s
+✓ Finished writing to filesystem cache in 3.0min
+✓ Finished writing to filesystem cache in 2.8min
+✓ Finished writing to filesystem cache in 3.2min
+✓ Finished writing to filesystem cache in 3.4min
+✓ Finished writing to filesystem cache in 2.4min
+✓ Finished writing to filesystem cache in 3.4min
+✓ Finished writing to filesystem cache in 3.4min
+✓ Finished writing to filesystem cache in 17.7s
+✓ Finished writing to filesystem cache in 75s
+✓ Finished writing to filesystem cache in 2.8min
+✓ Finished writing to filesystem cache in 4.5min
+✓ Finished writing to filesystem cache in 87s
+✓ Finished writing to filesystem cache in 3.6min
+✓ Finished writing to filesystem cache in 3.0min
+✓ Finished writing to filesystem cache in 3.4min
+✓ Finished writing to filesystem cache in 87s
+✓ Finished writing to filesystem cache in 3.5min
+✓ Finished writing to filesystem cache in 12.7s
+✓ Finished writing to filesystem cache in 2.6min
+✓ Finished writing to filesystem cache in 3.2min
+✓ Finished writing to filesystem cache in 10.2s
+✓ Finished writing to filesystem cache in 29.0s
+✓ Finished writing to filesystem cache in 3.8min
+✓ Finished writing to filesystem cache in 10.1s
+✓ Finished writing to filesystem cache in 3.1min
+✓ Finished writing to filesystem cache in 11.1s
+✓ Finished writing to filesystem cache in 10.4s
+✓ Finished writing to filesystem cache in 3.0min
+✓ Finished writing to filesystem cache in 12.1s
+✓ Finished writing to filesystem cache in 4.1min
+✓ Finished writing to filesystem cache in 56s
+✓ Finished writing to filesystem cache in 119s
+✓ Finished writing to filesystem cache in 94s
+✓ Finished writing to filesystem cache in 3.5min
+✓ Finished writing to filesystem cache in 2.4min
+✓ Finished writing to filesystem cache in 15.4s
+✓ Finished writing to filesystem cache in 10.5s
+✓ Finished writing to filesystem cache in 12.6s
+✓ Finished writing to filesystem cache in 3.3min
+✓ Finished writing to filesystem cache in 3.0min
+✓ Finished writing to filesystem cache in 21.5s
+✓ Finished writing to filesystem cache in 19.2s
+✓ Finished writing to filesystem cache in 15.5s
+✓ Finished writing to filesystem cache in 12.4s
+✓ Finished writing to filesystem cache in 3.5min
+✓ Finished writing to filesystem cache in 3.0min
+✓ Finished writing to filesystem cache in 3.0min
+✓ Finished writing to filesystem cache in 4.1min
+✓ Finished writing to filesystem cache in 76s
+✓ Finished writing to filesystem cache in 3.2min
+✓ Finished writing to filesystem cache in 2.6min
+✓ Finished writing to filesystem cache in 2.5min
+✓ Finished writing to filesystem cache in 33.2s
+✓ Finished writing to filesystem cache in 3.1min
+✓ Finished writing to filesystem cache in 4.2min
+✓ Finished writing to filesystem cache in 15.4s
+✓ Finished writing to filesystem cache in 116s
+✓ Finished writing to filesystem cache in 12.3s
+✓ Finished writing to filesystem cache in 12.4s
+✓ Finished writing to filesystem cache in 87s
+✓ Finished writing to filesystem cache in 2.9min
+✓ Finished writing to filesystem cache in 22.0s
+✓ Finished writing to filesystem cache in 23.3s
+✓ Finished writing to filesystem cache in 12.6s
+✓ Finished writing to filesystem cache in 89s
+✓ Finished writing to filesystem cache in 2.2min
+✓ Finished writing to filesystem cache in 2.6min
+✓ Finished writing to filesystem cache in 63s
+✓ Finished writing to filesystem cache in 10.6s
+✓ Finished writing to filesystem cache in 3.9min
+✓ Finished writing to filesystem cache in 103s
+✓ Finished writing to filesystem cache in 18.3s
+✓ Finished writing to filesystem cache in 87s
+✓ Finished writing to filesystem cache in 12.9s
+✓ Finished writing to filesystem cache in 3.6min
+✓ Finished writing to filesystem cache in 3.3min
+✓ Finished writing to filesystem cache in 3.4min
+✓ Finished writing to filesystem cache in 3.1min
+✓ Finished writing to filesystem cache in 3.1min
+✓ Finished writing to filesystem cache in 2.9min
+✓ Finished writing to filesystem cache in 14.3s
+✓ Finished writing to filesystem cache in 10.9s
+✓ Finished writing to filesystem cache in 16.9s
+
+thread 'tokio-rt-worker' (4351872) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:721:25:
+Failed to restore data for task TaskId 29684: Failed to restore Data for TaskId 29684
+
+Caused by:
+    0: Looking up task storage for TaskId 29684 from database failed
+    1: Unable to open static sorted file referenced from 00000010.meta
+    2: Failed to mmap SST file /Users/anukanphetphanomkun/Desktop/SuperRich/LottoDealerPro-Online/frontend/.next/dev/cache/turbopack/v16.3.4-299180d3/00000002.sst (9407148 bytes)
+    3: Operation timed out (os error 60)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+turbo-tasks: an internal panic occurred outside the per-task panic boundary. This is a bug in turbo-tasks/Turbopack — please report it at https://github.com/vercel/next.js/discussions and include the panic message and stack trace above.
+
+Aborting.

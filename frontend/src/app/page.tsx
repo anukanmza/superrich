@@ -149,6 +149,7 @@ export default function KeyingPage() {
       setTopAmt('');
       setBotAmt('');
       setShowConfirmModal(false);
+      setTimeout(() => document.getElementById('input-number')?.focus(), 100);
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการบันทึกบิล');
     } finally {
