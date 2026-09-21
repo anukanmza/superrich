@@ -103,7 +103,8 @@ export default function CustomerSummaryPage() {
       ['บิล', 'ยอดรวม', 'ยอดถูกรางวัล', 'ยอดสุทธิหลังหักรางวัล', 'รายละเอียดเลขถูกรางวัล']
     ];
 
-    row.bills.forEach(b => {
+    console.log('Exporting excel with reversed bills...');
+    [...row.bills].reverse().forEach(b => {
       const gross = (b.entries || []).reduce((s, e) => s + (e.amount || 0), 0);
       
       const wins = (b.entries || []).filter(e => isWinning({ number: e.number || '', type: e.type || '' }, results));
