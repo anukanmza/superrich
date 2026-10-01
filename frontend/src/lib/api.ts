@@ -107,7 +107,14 @@ export async function updateSettings(data: Record<string, any>) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update settings');
+  if (!res.ok) {
+    let errMsg = 'Failed to update settings';
+    try {
+      const errBody = await res.json();
+      if (errBody.message) errMsg = errBody.message;
+    } catch (e) {}
+    throw new Error(errMsg);
+  }
   return res.json();
 }
 
