@@ -219,8 +219,10 @@ export default function CutoutPage() {
       setSelectedRows(new Set());
       alert('ส่งออกเลขเรียบร้อยแล้ว');
       setActiveTab('send');
-    } catch (err) {
-      alert('เกิดข้อผิดพลาดในการส่งออก');
+    } catch (err: any) {
+      console.error('ส่งออกเลขผิดพลาด:', err);
+      const message = err?.message || 'ไม่ทราบสาเหตุ';
+      alert(`เกิดข้อผิดพลาดในการส่งออก: ${message}`);
     } finally {
       setIsSending(false);
     }

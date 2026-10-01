@@ -2,7 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
+
+  // Increase JSON body size limit (default is 100KB, cutouts_json can exceed this)
+  app.useBodyParser('json', { limit: '10mb' });
   
   app.enableCors({
     origin: ['http://localhost:3001', 'https://superrich-lotto.vercel.app'],
