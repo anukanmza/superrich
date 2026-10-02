@@ -76,7 +76,7 @@ ${historyDataStr}
       // Save prediction to DB (using a dummy target period name for now, in a real app this would be the actual upcoming period)
       // Determine next period roughly based on current date
       const d = new Date();
-      const targetPeriod = \`งวดต่อไป (\${d.getDate()} \${d.toLocaleString('default', { month: 'short' })} \${d.getFullYear() + 543})\`;
+      const targetPeriod = `งวดต่อไป (${d.getDate()} ${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear() + 543})`;
 
       await this.prisma.aiPrediction.create({
         data: {
