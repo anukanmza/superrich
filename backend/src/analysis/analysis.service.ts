@@ -45,38 +45,36 @@ ${historyDataStr}
 ห้ามมีข้อความอื่นนอกเหนือจาก JSON object
 `;
 
+      // Use official SDK which natively supports the new AQ keys and handles endpoint routing correctly
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
       const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro-latest'];
-      let response;
-      let lastErrorData;
+      let rawText = '';
+      let lastError;
 
-      for (const model of modelsToTry) {
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+      for (const modelName of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({
+            model: modelName,
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 1500,
               responseMimeType: "application/json"
             }
-          })
-        });
-
-        if (response.ok) {
-          break;
-        } else {
-          lastErrorData = await response.json();
-          console.log(`Model ${model} failed:`, lastErrorData);
+          });
+          
+          const result = await model.generateContent(prompt);
+          rawText = result.response.text();
+          if (rawText) break;
+        } catch (e: any) {
+          lastError = e;
+          console.log(`SDK Model ${modelName} failed:`, e.message);
         }
       }
 
-      if (!response || !response.ok) {
-        throw new Error(`Gemini API Error (Tried all models): ${JSON.stringify(lastErrorData)}`);
+      if (!rawText) {
+        throw new Error(`Gemini SDK Error (Tried all models): ${lastError?.message}`);
       }
-
-      const data = await response.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
       
       let resultObj;
       try {
