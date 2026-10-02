@@ -10,6 +10,11 @@ export class AnalysisController {
     return this.analysisService.analyzeCurrentPeriod();
   }
 
+  @Get('latest-prediction')
+  async getLatestPrediction() {
+    return this.analysisService.getLatestPrediction();
+  }
+
   @Get('history')
   async getHistory() {
     return this.analysisService.getHistory();

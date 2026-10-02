@@ -203,6 +203,14 @@ export async function getAiStats() {
   return res.json();
 }
 
+export async function getLatestPrediction() {
+  const res = await fetchWithRetry(`${API_BASE}/analysis/latest-prediction`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch latest prediction');
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text);
+}
+
 export async function addAiHistory(data: { period: string, top3: string, bot2: string }) {
   const res = await fetchWithRetry(`${API_BASE}/analysis/history`, {
     method: 'POST',

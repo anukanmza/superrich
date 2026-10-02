@@ -178,7 +178,8 @@ export default function AnalysisPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   
   const [aiStats, setAiStats] = useState<any>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [showPastDataForm, setShowPastDataForm] = useState(false);
   const [newPeriod, setNewPeriod] = useState('');
   const [newTop3, setNewTop3] = useState('');
   const [newBot2, setNewBot2] = useState('');
@@ -195,9 +196,21 @@ export default function AnalysisPage() {
 
   const loadAiStats = async () => {
     try {
-      const { getAiStats } = await import('../../lib/api');
-      const stats = await getAiStats();
+      const { getAiStats, getLatestPrediction } = await import('../../lib/api');
+      const [stats, latest] = await Promise.all([getAiStats(), getLatestPrediction()]);
       setAiStats(stats);
+      
+      if (latest && latest.predictedTop3 && latest.predictedTop3.length > 0 && !aiPredictedTop3.length && !aiAnalysisText) {
+        setAiAnalysisText(latest.analysis);
+        setAiPredictedTop3(latest.predictedTop3);
+        setAiPredictedTop2(latest.predictedTop2);
+        setAiPredictedBot2(latest.predictedBot2);
+        
+        // Auto-fill inputs for feedback form
+        setAiTop3(latest.predictedTop3.join(', '));
+        setAiTop2(latest.predictedTop2.join(', '));
+        setAiBot2(latest.predictedBot2.join(', '));
+      }
     } catch (e) {
       console.error(e);
     }
@@ -214,6 +227,12 @@ export default function AnalysisPage() {
       setAiPredictedTop3(result.predictedTop3 || []);
       setAiPredictedTop2(result.predictedTop2 || []);
       setAiPredictedBot2(result.predictedBot2 || []);
+      
+      // Auto-fill feedback form
+      setAiTop3((result.predictedTop3 || []).join(', '));
+      setAiTop2((result.predictedTop2 || []).join(', '));
+      setAiBot2((result.predictedBot2 || []).join(', '));
+      
       loadAiStats(); // reload stats
     } catch (err: any) {
       console.error(err);
@@ -240,7 +259,8 @@ export default function AnalysisPage() {
       if (aiBot2) payload.aiBot2 = aiBot2.split(',').map(s => s.trim());
 
       await addAiHistory(payload);
-      setShowAddForm(false);
+      setShowFeedbackForm(false);
+      setShowPastDataForm(false);
       setNewPeriod('');
       setNewTop3('');
       setNewBot2('');
@@ -316,12 +336,14 @@ export default function AnalysisPage() {
                     <div className="text-[#6c7086] text-xs mb-1">ประวัติการออกรางวัลจริง</div>
                     <div className="font-bold text-lg text-[#cba6f7]">{aiStats.totalHistorical} งวด</div>
                   </div>
-                  <div className="bg-[#1e1e2e] p-3 rounded-lg col-span-2">
-                    <div className="text-[#6c7086] text-xs mb-2">อัตราความแม่นยำ (จากการบันทึกผล)</div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-[#f9e2af]">3 ตัวบน: <span className="font-bold">{aiStats.accuracyTop3}</span></span>
-                      <span className="text-[#89dceb]">2 ตัวบน: <span className="font-bold">{aiStats.accuracyTop2}</span></span>
-                      <span className="text-[#f38ba8]">2 ตัวล่าง: <span className="font-bold">{aiStats.accuracyBot2}</span></span>
+                  <div className="bg-[#1e1e2e] p-3 rounded-lg col-span-2 flex justify-between items-center">
+                    <div>
+                      <div className="text-[#6c7086] text-xs mb-2">ความแม่นยำ (คำนวณจาก {aiStats.evaluatedCount} งวดที่มีการให้หวย)</div>
+                      <div className="flex justify-between items-center text-xs gap-4">
+                        <span className="text-[#f9e2af]">3 ตัวบน: <span className="font-bold text-sm">{aiStats.top3Hits}/{aiStats.evaluatedCount}</span> ({aiStats.accuracyTop3})</span>
+                        <span className="text-[#89dceb]">2 ตัวบน: <span className="font-bold text-sm">{aiStats.top2Hits}/{aiStats.evaluatedCount}</span> ({aiStats.accuracyTop2})</span>
+                        <span className="text-[#f38ba8]">2 ตัวล่าง: <span className="font-bold text-sm">{aiStats.bot2Hits}/{aiStats.evaluatedCount}</span> ({aiStats.accuracyBot2})</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -346,17 +368,57 @@ export default function AnalysisPage() {
                 {isAiLoading ? '⏳ กำลังประมวลผลข้อมูล...' : '✨ เริ่มการวิเคราะห์เชิงลึก'}
               </button>
               
-              <button 
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="mt-4 text-xs text-[#89b4fa] hover:underline"
-              >
-                📝 บันทึกผลการวิเคราะห์เทียบกับรางวัลจริง
-              </button>
+              <div className="flex gap-4 mt-4 w-full">
+                <button 
+                  onClick={() => { setShowFeedbackForm(!showFeedbackForm); setShowPastDataForm(false); }}
+                  className="flex-1 text-xs text-[#a6e3a1] bg-[#181825] border border-[#a6e3a1]/20 py-2 rounded hover:bg-[#a6e3a1]/10 transition-colors"
+                >
+                  🎯 ตรวจสอบความแม่นยำ (งวดล่าสุด)
+                </button>
+                <button 
+                  onClick={() => { setShowPastDataForm(!showPastDataForm); setShowFeedbackForm(false); }}
+                  className="flex-1 text-xs text-[#89b4fa] bg-[#181825] border border-[#89b4fa]/20 py-2 rounded hover:bg-[#89b4fa]/10 transition-colors"
+                >
+                  📚 เพิ่มข้อมูลผลรางวัลย้อนหลัง (สร้างฐานข้อมูล)
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Add History Form */}
-          {showAddForm && (
+          {/* Past Data Form (No AI Preds) */}
+          {showPastDataForm && (
+            <div className="w-full max-w-4xl bg-[#1e1e2e] border border-[#89b4fa]/30 rounded-xl p-6 shadow-xl mb-8 transition-all animate-fadeIn">
+              <h3 className="text-[#89b4fa] font-bold mb-4 flex items-center gap-2 border-b border-[#313244] pb-2">
+                📚 เพิ่มข้อมูลผลรางวัลย้อนหลัง
+              </h3>
+              <p className="text-xs text-[#6c7086] mb-6">ใช้สำหรับสร้างฐานข้อมูลตั้งต้นให้ AI ได้เรียนรู้รูปแบบการออกรางวัลในอดีต (ไม่จำเป็นต้องกรอกเลขที่ AI ให้)</p>
+              
+              <div className="grid grid-cols-3 gap-6 mb-6">
+                <div>
+                  <label className="text-xs text-[#6c7086] block mb-1">ชื่องวด (เช่น 1 พ.ย. 68)</label>
+                  <input type="text" value={newPeriod} onChange={e => setNewPeriod(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-sm" placeholder="ชื่องวด..." />
+                </div>
+                <div>
+                  <label className="text-xs text-[#6c7086] block mb-1">ผลรางวัล 3 ตัวบน</label>
+                  <input type="text" value={newTop3} onChange={e => setNewTop3(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#a6e3a1] text-sm" placeholder="เช่น 123" />
+                </div>
+                <div>
+                  <label className="text-xs text-[#6c7086] block mb-1">ผลรางวัล 2 ตัวล่าง</label>
+                  <input type="text" value={newBot2} onChange={e => setNewBot2(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#a6e3a1] text-sm" placeholder="เช่น 45" />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-[#313244] pt-4">
+                <button onClick={() => setShowPastDataForm(false)} className="px-6 py-2 rounded bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a] font-bold text-sm">ยกเลิก</button>
+                <button onClick={() => { setAiTop3(''); setAiTop2(''); setAiBot2(''); handleAddHistory(); }} disabled={isAddingHistory} className="px-6 py-2 rounded bg-[#89b4fa] text-[#11111b] hover:opacity-90 font-bold text-sm">
+                  {isAddingHistory ? 'กำลังบันทึก...' : 'บันทึกฐานข้อมูล'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* AI Feedback Form */}
+          {showFeedbackForm && (
             <div className="w-full max-w-4xl bg-[#1e1e2e] border border-[#cba6f7]/30 rounded-xl p-6 shadow-xl mb-8 transition-all animate-fadeIn">
               <h3 className="text-[#cba6f7] font-bold mb-4 flex items-center gap-2 border-b border-[#313244] pb-2">
                 📝 บันทึกประวัติและตรวจสอบความแม่นยำ AI
@@ -403,8 +465,8 @@ export default function AnalysisPage() {
               </div>
 
               <div className="flex justify-end gap-2 border-t border-[#313244] pt-4">
-                <button onClick={() => setShowAddForm(false)} className="px-6 py-2 rounded bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a] font-bold">ยกเลิก</button>
-                <button onClick={handleAddHistory} disabled={isAddingHistory} className="px-6 py-2 rounded bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] text-[#11111b] hover:opacity-90 font-bold">
+                <button onClick={() => setShowFeedbackForm(false)} className="px-6 py-2 rounded bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a] font-bold text-sm">ยกเลิก</button>
+                <button onClick={handleAddHistory} disabled={isAddingHistory} className="px-6 py-2 rounded bg-gradient-to-r from-[#cba6f7] to-[#a6e3a1] text-[#11111b] hover:opacity-90 font-bold text-sm">
                   {isAddingHistory ? 'กำลังบันทึก...' : 'บันทึกข้อมูล & คำนวณความแม่นยำ'}
                 </button>
               </div>

@@ -164,6 +164,21 @@ ${historyDataStr}
     });
   }
 
+  async getLatestPrediction() {
+    const latest = await this.prisma.aiPrediction.findFirst({
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    if (!latest) return null;
+    
+    return {
+      analysis: "ผลการวิเคราะห์ล่าสุด (ดึงจากประวัติเดิม)",
+      predictedTop3: JSON.parse(latest.predictedTop3),
+      predictedTop2: JSON.parse(latest.predictedTop2),
+      predictedBot2: JSON.parse(latest.predictedBot2)
+    };
+  }
+
   async getStats() {
     const predictionsCount = await this.prisma.aiPrediction.count();
     const historyCount = await this.prisma.aiHistoricalData.count();
@@ -176,11 +191,14 @@ ${historyDataStr}
     let accuracyTop3 = "0%";
     let accuracyTop2 = "0%";
     let accuracyBot2 = "0%";
+    let top3Hits = 0;
+    let top2Hits = 0;
+    let bot2Hits = 0;
 
     if (evaluatedRecords.length > 0) {
-      const top3Hits = evaluatedRecords.filter(r => r.isHitTop3).length;
-      const top2Hits = evaluatedRecords.filter(r => r.isHitTop2).length;
-      const bot2Hits = evaluatedRecords.filter(r => r.isHitBot2).length;
+      top3Hits = evaluatedRecords.filter(r => r.isHitTop3).length;
+      top2Hits = evaluatedRecords.filter(r => r.isHitTop2).length;
+      bot2Hits = evaluatedRecords.filter(r => r.isHitBot2).length;
       
       accuracyTop3 = Math.round((top3Hits / evaluatedRecords.length) * 100) + "%";
       accuracyTop2 = Math.round((top2Hits / evaluatedRecords.length) * 100) + "%";
@@ -193,6 +211,10 @@ ${historyDataStr}
       accuracyTop3,
       accuracyTop2,
       accuracyBot2,
+      top3Hits,
+      top2Hits,
+      bot2Hits,
+      evaluatedCount: evaluatedRecords.length,
       lastChecked: new Date().toISOString()
     };
   }
