@@ -1,4 +1,5 @@
 'use client';
+console.log('AI page loaded');
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchCustomers, fetchBills, getSettings, Customer, Bill } from '../../lib/api';
