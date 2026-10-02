@@ -147,3 +147,9 @@ export async function deleteArchive(id: number) {
   if (!res.ok) throw new Error('Failed to delete archive');
   return res.json();
 }
+
+export async function fetchAiPredictions() {
+  const res = await fetch(`${API_BASE}/ai/predictions`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch AI predictions');
+  return res.json();
+}

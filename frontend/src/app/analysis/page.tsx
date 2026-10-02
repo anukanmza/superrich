@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { fetchCustomers, fetchBills, getSettings, Customer, Bill } from '../../lib/api';
+import { fetchCustomers, fetchBills, getSettings, fetchAiPredictions, Customer, Bill } from '../../lib/api';
 import { getPerms, getLimit, getPrizeRate } from '../../lib/lotto';
 
 type AnalyzedEntry = {
@@ -22,6 +22,11 @@ type OutcomeResult = {
 export default function AnalysisPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'gross' | 'keep'>('keep');
+  
+  // AI State
+  const [aiData, setAiData] = useState<any>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string>('');
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
@@ -56,6 +61,23 @@ export default function AnalysisPage() {
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, []);
+
+  const handleFetchAi = async () => {
+    setIsAiLoading(true);
+    setAiError('');
+    try {
+      const data = await fetchAiPredictions();
+      if (data.error) {
+        setAiError(data.error);
+      } else {
+        setAiData(data);
+      }
+    } catch (e: any) {
+      setAiError(e.message || 'Error fetching AI');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const engine = useMemo(() => {
     const discMap: Record<number, number> = {};
@@ -191,6 +213,71 @@ export default function AnalysisPage() {
             วิเคราะห์ยอดที่เก็บจริง (Keep)
           </button>
         </div>
+      </div>
+
+      {/* AI Analysis Section */}
+      <div className="bg-[#11151e] border border-[#cba6f7] rounded-lg p-4 mb-4 flex flex-col gap-3 shrink-0 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[#cba6f7]"></div>
+        <div className="flex justify-between items-center border-b border-[#2a3244] pb-2">
+          <div>
+            <span className="text-[14px] text-[#cba6f7] font-bold mb-1 flex items-center gap-2">✨ AI วิเคราะห์ความน่าจะเป็น (จากสถิติย้อนหลัง 5 ปี)</span>
+            <span className="text-[10px] text-[#cdd6f4]">ระบบจะวิเคราะห์แพทเทิร์นเลขเด่นจากข้อมูลประวัติการออกรางวัล 155 งวดล่าสุด</span>
+          </div>
+          <button 
+            onClick={handleFetchAi}
+            disabled={isAiLoading}
+            className="bg-[#cba6f7] text-[#11111b] px-4 py-2 rounded font-bold text-sm hover:bg-[#b4befe] transition-colors disabled:opacity-50"
+          >
+            {isAiLoading ? 'กำลังวิเคราะห์...' : 'เรียก AI วิเคราะห์งวดนี้'}
+          </button>
+        </div>
+
+        {aiError && <div className="text-[#f38ba8] text-sm p-2 bg-[#f38ba8]/10 rounded border border-[#f38ba8]/20">{aiError}</div>}
+        
+        {aiData && !aiError && (
+          <div className="flex flex-col gap-4 mt-2">
+            <div className="text-[#cdd6f4] text-sm bg-[#1e1e2e] p-3 rounded border border-[#313244]">
+              <span className="font-bold text-[#f9e2af] mr-2">📌 สรุปภาพรวมจาก AI:</span>
+              {aiData.summary}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#1e1e2e] p-3 rounded border border-[#313244]">
+                <h4 className="text-[#a6e3a1] font-bold mb-2 text-sm border-b border-[#313244] pb-1">3 ตัวบน</h4>
+                <div className="flex flex-col gap-2 h-40 overflow-y-auto pr-1">
+                  {(aiData.top3 || []).map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center text-xs bg-[#181825] p-2 rounded">
+                      <span className="text-lg font-bold tracking-widest text-[#cdd6f4]">{item.number}</span>
+                      <span className="text-[#6c7086] text-right ml-2 leading-tight">{item.reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-[#1e1e2e] p-3 rounded border border-[#313244]">
+                <h4 className="text-[#89b4fa] font-bold mb-2 text-sm border-b border-[#313244] pb-1">2 ตัวบน</h4>
+                <div className="flex flex-col gap-2 h-40 overflow-y-auto pr-1">
+                  {(aiData.top2 || []).map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center text-xs bg-[#181825] p-2 rounded">
+                      <span className="text-lg font-bold tracking-widest text-[#cdd6f4]">{item.number}</span>
+                      <span className="text-[#6c7086] text-right ml-2 leading-tight">{item.reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-[#1e1e2e] p-3 rounded border border-[#313244]">
+                <h4 className="text-[#f38ba8] font-bold mb-2 text-sm border-b border-[#313244] pb-1">2 ตัวล่าง</h4>
+                <div className="flex flex-col gap-2 h-40 overflow-y-auto pr-1">
+                  {(aiData.bottom2 || []).map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center text-xs bg-[#181825] p-2 rounded">
+                      <span className="text-lg font-bold tracking-widest text-[#cdd6f4]">{item.number}</span>
+                      <span className="text-[#6c7086] text-right ml-2 leading-tight">{item.reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Settings Sandbox */}
