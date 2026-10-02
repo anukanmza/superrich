@@ -70,8 +70,8 @@ export default function ArchiveDetailPage() {
     let c: any[] = [];
     let r: any = {};
     let s: any = {};
-    try { b = JSON.parse(archive.bills || '[]'); } catch (e) {}
-    try { c = JSON.parse(archive.cutouts || '[]'); } catch (e) {}
+    try { const parsed = JSON.parse(archive.bills || '[]'); b = Array.isArray(parsed) ? parsed : []; } catch (e) {}
+    try { const parsed = JSON.parse(archive.cutouts || '[]'); c = Array.isArray(parsed) ? parsed : []; } catch (e) {}
     try { r = JSON.parse(archive.results || '{}'); } catch (e) {}
     try { s = JSON.parse(archive.settings || '{}'); } catch (e) {}
 
