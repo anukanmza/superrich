@@ -49,9 +49,9 @@ ${historyDataStr}
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro-latest'];
+      const modelsToTry = ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-pro-latest', 'gemini-3.8-flash', 'gemini-2.5-flash'];
       let rawText = '';
-      let lastError;
+      let allErrors: string[] = [];
 
       for (const modelName of modelsToTry) {
         try {
@@ -59,7 +59,6 @@ ${historyDataStr}
             model: modelName,
             generationConfig: {
               temperature: 0.7,
-              responseMimeType: "application/json"
             }
           });
           
@@ -67,7 +66,7 @@ ${historyDataStr}
           rawText = result.response.text();
           if (rawText) break;
         } catch (e: any) {
-          lastError = e;
+          allErrors.push(`${modelName}: ${e.message}`);
           console.log(`SDK Model ${modelName} failed:`, e.message);
         }
       }
@@ -85,7 +84,7 @@ ${historyDataStr}
         } catch (err) {
           availableModels = 'Failed to fetch model list';
         }
-        throw new Error(`Gemini SDK Error (Tried all models). Available models for your key: ${availableModels}. Last error: ${lastError?.message}`);
+        throw new Error(`Gemini SDK Error. Errors: ${allErrors.join(' | ')}. Available models: ${availableModels}`);
       }
       
       let resultObj;
