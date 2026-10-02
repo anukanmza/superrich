@@ -73,7 +73,19 @@ ${historyDataStr}
       }
 
       if (!rawText) {
-        throw new Error(`Gemini SDK Error (Tried all models): ${lastError?.message}`);
+        let availableModels = 'Unknown';
+        try {
+          const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+          const modelsData = await modelsRes.json();
+          if (modelsData.models) {
+            availableModels = modelsData.models.map((m: any) => m.name).join(', ');
+          } else {
+            availableModels = JSON.stringify(modelsData);
+          }
+        } catch (err) {
+          availableModels = 'Failed to fetch model list';
+        }
+        throw new Error(`Gemini SDK Error (Tried all models). Available models for your key: ${availableModels}. Last error: ${lastError?.message}`);
       }
       
       let resultObj;
