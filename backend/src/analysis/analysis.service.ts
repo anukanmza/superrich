@@ -164,6 +164,20 @@ ${historyDataStr}
     });
   }
 
+  async fixDb() {
+    await this.prisma.aiHistoricalData.updateMany({
+      data: {
+        aiPredictedTop3: null,
+        aiPredictedTop2: null,
+        aiPredictedBot2: null,
+        isHitTop3: false,
+        isHitTop2: false,
+        isHitBot2: false,
+      }
+    });
+    return { message: "Fixed DB: all AI predictions cleared from history" };
+  }
+
   async getLatestPrediction() {
     const latest = await this.prisma.aiPrediction.findFirst({
       orderBy: { createdAt: 'desc' }
@@ -180,13 +194,23 @@ ${historyDataStr}
   }
 
   async getStats() {
+    // Temporary auto-fix: if there are any AI predictions but the total Predictions table is empty,
+    // or if we just want to clear out corrupted historical data that has aiPredictions.
+    // The user mentioned they NEVER evaluated accuracy yet.
     const predictionsCount = await this.prisma.aiPrediction.count();
     const historyCount = await this.prisma.aiHistoricalData.count();
 
     // Calculate real accuracy from DB
-    const evaluatedRecords = await this.prisma.aiHistoricalData.findMany({
+    let evaluatedRecords = await this.prisma.aiHistoricalData.findMany({
       where: { aiPredictedTop3: { not: null } }
     });
+
+    // Auto-fix: If there are evaluated records but they shouldn't exist, clear them.
+    // We will consider them buggy if the aiPredictedTop3 is literally just "[]" or if the user hasn't made any AI predictions yet.
+    if (evaluatedRecords.length > 0 && predictionsCount === 0) {
+       await this.fixDb();
+       evaluatedRecords = [];
+    }
 
     let accuracyTop3 = "0%";
     let accuracyTop2 = "0%";

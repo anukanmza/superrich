@@ -220,3 +220,11 @@ export async function addAiHistory(data: { period: string, top3: string, bot2: s
   if (!res.ok) throw new Error('Failed to add AI history');
   return res.json();
 }
+
+export async function resetAiStats() {
+  const res = await fetchWithRetry(`${API_BASE}/analysis/fix-db`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to reset AI stats');
+  return res.json();
+}

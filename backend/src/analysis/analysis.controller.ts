@@ -25,6 +25,11 @@ export class AnalysisController {
     return this.analysisService.addHistory(body);
   }
 
+  @Post('fix-db')
+  async fixDb() {
+    return this.analysisService.fixDb();
+  }
+
   @Get('stats')
   async getStats() {
     return this.analysisService.getStats();

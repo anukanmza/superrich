@@ -277,6 +277,45 @@ export default function AnalysisPage() {
     }
   };
 
+  const handleAddPastData = async () => {
+    if (!newPeriod || !newTop3 || !newBot2) {
+      setAiError('กรุณากรอกงวดและผลรางวัลให้ครบถ้วน');
+      return;
+    }
+    setIsAddingHistory(true);
+    try {
+      const { addAiHistory } = await import('../../lib/api');
+      
+      // Explicitly only send the draw results, NO AI predictions
+      const payload: any = { period: newPeriod, top3: newTop3, bot2: newBot2 };
+
+      await addAiHistory(payload);
+      setShowPastDataForm(false);
+      setNewPeriod('');
+      setNewTop3('');
+      setNewBot2('');
+      setAiError(null);
+      loadAiStats();
+      alert('เพิ่มข้อมูลประวัติสำเร็จ!');
+    } catch (err: any) {
+      setAiError('ไม่สามารถเพิ่มข้อมูลได้: ' + err.message);
+    } finally {
+      setIsAddingHistory(false);
+    }
+  };
+
+  const handleResetStats = async () => {
+    if (!confirm('ยืนยันที่จะล้างข้อมูลความแม่นยำของ AI ทั้งหมด? (ประวัติการออกรางวัลยังคงอยู่)')) return;
+    try {
+      const { resetAiStats } = await import('../../lib/api');
+      await resetAiStats();
+      alert('ล้างข้อมูลความแม่นยำเรียบร้อยแล้ว');
+      loadAiStats();
+    } catch (err: any) {
+      alert('ไม่สามารถล้างข้อมูลได้: ' + err.message);
+    }
+  };
+
   if (isLoading) return <div className="p-8 text-[#cdd6f4]">กำลังโหลดโมเดลวิเคราะห์...</div>;
 
   return (
@@ -324,9 +363,14 @@ export default function AnalysisPage() {
             {/* Stats Box */}
             {aiStats && (
               <div className="bg-[#11151e] border border-[#2a3244] rounded-xl p-4 flex-1 min-w-[300px] shadow-lg">
-                <h3 className="text-[#a6e3a1] font-bold text-lg mb-3 flex items-center gap-2">
-                  <span className="text-xl">🎯</span> สถิติความแม่นยำของ AI
-                </h3>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-[#a6e3a1] font-bold text-lg flex items-center gap-2">
+                    <span className="text-xl">🎯</span> สถิติความแม่นยำของ AI
+                  </h3>
+                  <button onClick={handleResetStats} className="text-[10px] text-[#f38ba8] hover:underline px-2 py-1 bg-[#f38ba8]/10 rounded border border-[#f38ba8]/30">
+                    รีเซ็ตความแม่นยำ
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-4 text-sm text-[#cdd6f4]">
                   <div className="bg-[#1e1e2e] p-3 rounded-lg">
                     <div className="text-[#6c7086] text-xs mb-1">จำนวนครั้งที่ AI ให้หวย</div>
@@ -410,7 +454,7 @@ export default function AnalysisPage() {
 
               <div className="flex justify-end gap-2 border-t border-[#313244] pt-4">
                 <button onClick={() => setShowPastDataForm(false)} className="px-6 py-2 rounded bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a] font-bold text-sm">ยกเลิก</button>
-                <button onClick={() => { setAiTop3(''); setAiTop2(''); setAiBot2(''); handleAddHistory(); }} disabled={isAddingHistory} className="px-6 py-2 rounded bg-[#89b4fa] text-[#11111b] hover:opacity-90 font-bold text-sm">
+                <button onClick={handleAddPastData} disabled={isAddingHistory} className="px-6 py-2 rounded bg-[#89b4fa] text-[#11111b] hover:opacity-90 font-bold text-sm">
                   {isAddingHistory ? 'กำลังบันทึก...' : 'บันทึกฐานข้อมูล'}
                 </button>
               </div>
