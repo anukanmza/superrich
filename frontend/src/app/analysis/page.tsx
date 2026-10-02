@@ -185,6 +185,43 @@ export default function AnalysisPage() {
   const [aiTop3, setAiTop3] = useState('');
   const [aiTop2, setAiTop2] = useState('');
   const [aiBot2, setAiBot2] = useState('');
+  const [isAddingHistory, setIsAddingHistory] = useState(false);
+
+  useEffect(() => {
+    if (analysisTab === 'ai' && !aiStats) {
+      loadAiStats();
+    }
+  }, [analysisTab]);
+
+  const loadAiStats = async () => {
+    try {
+      const { getAiStats } = await import('../../lib/api');
+      const stats = await getAiStats();
+      setAiStats(stats);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRunAi = async () => {
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      // Need to use dynamic import or the api client if available
+      const { getAnalysis } = await import('../../lib/api');
+      const result = await getAnalysis();
+      setAiAnalysisText(result.analysis);
+      setAiPredictedTop3(result.predictedTop3 || []);
+      setAiPredictedTop2(result.predictedTop2 || []);
+      setAiPredictedBot2(result.predictedBot2 || []);
+      loadAiStats(); // reload stats
+    } catch (err: any) {
+      console.error(err);
+      setAiError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const handleAddHistory = async () => {
     if (!newPeriod || !newTop3 || !newBot2) {
