@@ -63,9 +63,9 @@ ${statsText}
       const jsonString = jsonMatch ? jsonMatch[1] : responseText.replace(/```json|```/g, '');
       
       return JSON.parse(jsonString);
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Prediction Error:', error);
-      return { error: "ไม่สามารถประมวลผล AI ได้ในขณะนี้ โปรดตรวจสอบ API Key หรือลองใหม่อีกครั้ง" };
+      return { error: `ไม่สามารถประมวลผล AI ได้: ${error.message || 'Unknown error'}` };
     }
   }
 }
