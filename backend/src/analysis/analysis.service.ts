@@ -1,6 +1,5 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
+import { historicalData } from './historical.js';
 
 @Injectable()
 export class AnalysisService {
@@ -11,9 +10,7 @@ export class AnalysisService {
     }
 
     try {
-      // Read historical data locally to avoid touching the DB
-      const historyPath = path.join(process.cwd(), 'src', 'analysis', 'historical.json');
-      const historyData = fs.readFileSync(historyPath, 'utf8');
+      const historyData = JSON.stringify(historicalData);
 
       // Call Gemini API directly via fetch
       const prompt = `
@@ -22,11 +19,12 @@ export class AnalysisService {
 ${historyData}
 
 ให้พิจารณาปัจจัยเสริมเพิ่มเติม เช่น โอกาสเลขเบิ้ล เลขหาม และพฤติกรรมการออกรางวัลที่อาจมีการ "ล็อค" ของรัฐบาล ตามสถิติความถี่
-ช่วยทำนายตัวเลขที่มีโอกาสออกมากที่สุดในงวดปัจจุบัน (ทั้ง 3 ตัวบน และ 2 ตัวล่าง)
-โดยให้สรุปมาเป็น 3 ประเด็นหลัก:
-1. เลข 3 ตัวบนที่เด่นที่สุด 3 ชุด
-2. เลข 2 ตัวล่างที่เด่นที่สุด 3 ชุด
-3. คำแนะนำเชิงความเสี่ยงสำหรับเจ้ามือ (เช่น ควรระวังการรับแทงเลขใดเป็นพิเศษ)
+ช่วยทำนายตัวเลขที่มีโอกาสออกมากที่สุดในงวดปัจจุบัน (ทั้ง 3 ตัวบน, 2 ตัวบน และ 2 ตัวล่าง)
+โดยให้สรุปมาเป็น 4 ประเด็นหลักอย่างชัดเจน:
+1. เลข 3 ตัวบน ที่มีโอกาสออกมากที่สุด 8 ชุด
+2. เลข 2 ตัวบน ที่มีโอกาสออกมากที่สุด 8 ชุด
+3. เลข 2 ตัวล่าง ที่มีโอกาสออกมากที่สุด 8 ชุด
+4. คำแนะนำเชิงความเสี่ยงสำหรับเจ้ามือ (เช่น ควรระวังการรับแทงเลขใดเป็นพิเศษ หรือความเสี่ยงเรื่องเลขเบิ้ล/หามในงวดนี้)
 
 ตอบกลับเป็นภาษาไทยที่อ่านง่ายและกระชับ
 `;
