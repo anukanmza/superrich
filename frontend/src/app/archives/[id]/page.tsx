@@ -34,18 +34,34 @@ export default function ArchiveDetailPage() {
     }
   };
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
-    Promise.all([
-      getArchiveById(Number(id)),
-      getSettings() // Fallback if archive has no settings
-    ])
-      .then(([archiveData, currentSettings]) => {
+    setIsLoading(true);
+    setLoadError(null);
+
+    const loadArchive = async () => {
+      try {
+        const archiveData = await getArchiveById(Number(id));
         setArchive(archiveData);
+      } catch (err) {
+        console.error('Failed to load archive:', err);
+        setLoadError('ไม่สามารถโหลดข้อมูลงวดย้อนหลังได้ กรุณารอสักครู่แล้วกด Reload');
+      }
+      
+      try {
+        const currentSettings = await getSettings();
         setFallbackSettings(currentSettings);
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+        // Non-critical, continue without fallback settings
+      }
+      
+      setIsLoading(false);
+    };
+
+    loadArchive();
   }, [id]);
 
   const { stats, bills, cutouts, rewards, winningEntries } = useMemo(() => {
@@ -193,7 +209,21 @@ export default function ArchiveDetailPage() {
   }, [archive, fallbackSettings]);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-full bg-[#0a0e14] text-[#cdd6f4]">กำลังโหลดข้อมูล...</div>;
+    return <div className="flex items-center justify-center h-full bg-[#0a0e14] text-[#cdd6f4]">กำลังโหลดข้อมูล... (อาจใช้เวลาสักครู่หากเซิร์ฟเวอร์เพิ่งเริ่มทำงาน)</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-[#0a0e14] text-[#cdd6f4] gap-4">
+        <p className="text-[#f38ba8]">{loadError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-[#1e2d3d] text-[#89b4fa] border border-[#2a4a6b] px-6 py-2 rounded font-bold hover:bg-[#2a4a6b]"
+        >
+          🔄 ลองใหม่อีกครั้ง
+        </button>
+      </div>
+    );
   }
 
   if (!archive || !stats) {
