@@ -1,5 +1,27 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
+// Retry wrapper to handle Render free-tier cold starts (server sleeps after 15 min idle)
+async function fetchWithRetry(url: string, options?: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      return res;
+    } catch (err: any) {
+      if (attempt === maxRetries) throw err;
+      // Wait before retrying: 2s, 4s, 8s
+      await new Promise(r => setTimeout(r, 2000 * attempt));
+    }
+  }
+  throw new Error('fetchWithRetry: all retries failed');
+}
+
 export interface Customer {
   id: number;
   name: string;
@@ -31,13 +53,13 @@ export interface Bill {
 }
 
 export async function fetchCustomers(): Promise<Customer[]> {
-  const res = await fetch(`${API_BASE}/customers`, { cache: 'no-store' });
+  const res = await fetchWithRetry(`${API_BASE}/customers`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch customers');
   return res.json();
 }
 
 export async function createCustomer(data: Partial<Customer>) {
-  const res = await fetch(`${API_BASE}/customers`, {
+  const res = await fetchWithRetry(`${API_BASE}/customers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -47,7 +69,7 @@ export async function createCustomer(data: Partial<Customer>) {
 }
 
 export async function updateCustomer(id: number, data: Partial<Customer>) {
-  const res = await fetch(`${API_BASE}/customers/${id}`, {
+  const res = await fetchWithRetry(`${API_BASE}/customers/${id}`, {
     method: 'PUT', // or PATCH depending on your NestJS controller
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -62,13 +84,13 @@ export interface BillInput {
 }
 
 export async function fetchBills(): Promise<Bill[]> {
-  const res = await fetch(`${API_BASE}/bills`, { cache: 'no-store' });
+  const res = await fetchWithRetry(`${API_BASE}/bills`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch bills');
   return res.json();
 }
 
 export async function createBill(data: BillInput) {
-  const res = await fetch(`${API_BASE}/bills`, {
+  const res = await fetchWithRetry(`${API_BASE}/bills`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -78,7 +100,7 @@ export async function createBill(data: BillInput) {
 }
 
 export async function deleteBill(id: number) {
-  const res = await fetch(`${API_BASE}/bills/${id}`, {
+  const res = await fetchWithRetry(`${API_BASE}/bills/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete bill');
@@ -86,7 +108,7 @@ export async function deleteBill(id: number) {
 }
 
 export async function updateBill(id: number, data: { entries: EntryInput[] }) {
-  const res = await fetch(`${API_BASE}/bills/${id}`, {
+  const res = await fetchWithRetry(`${API_BASE}/bills/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -96,13 +118,13 @@ export async function updateBill(id: number, data: { entries: EntryInput[] }) {
 }
 
 export async function getSettings() {
-  const res = await fetch(`${API_BASE}/settings`, { cache: 'no-store' });
+  const res = await fetchWithRetry(`${API_BASE}/settings`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch settings');
   return res.json();
 }
 
 export async function updateSettings(data: Record<string, any>) {
-  const res = await fetch(`${API_BASE}/settings`, {
+  const res = await fetchWithRetry(`${API_BASE}/settings`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -119,19 +141,19 @@ export async function updateSettings(data: Record<string, any>) {
 }
 
 export async function getArchives() {
-  const res = await fetch(`${API_BASE}/bills/archives`, { cache: 'no-store' });
+  const res = await fetchWithRetry(`${API_BASE}/bills/archives`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch archives');
   return res.json();
 }
 
 export async function getArchiveById(id: number) {
-  const res = await fetch(`${API_BASE}/bills/archives/${id}`, { cache: 'no-store' });
+  const res = await fetchWithRetry(`${API_BASE}/bills/archives/${id}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch archive');
   return res.json();
 }
 
 export async function archiveCurrentPeriod(periodName: string, cutoutsJson: string, resultsJson: string) {
-  const res = await fetch(`${API_BASE}/bills/archive`, {
+  const res = await fetchWithRetry(`${API_BASE}/bills/archive`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ periodName, cutoutsJson, resultsJson }),
@@ -141,7 +163,7 @@ export async function archiveCurrentPeriod(periodName: string, cutoutsJson: stri
 }
 
 export async function deleteCustomer(id: number) {
-  const res = await fetch(`${API_BASE}/customers/${id}`, {
+  const res = await fetchWithRetry(`${API_BASE}/customers/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete customer');
@@ -149,7 +171,7 @@ export async function deleteCustomer(id: number) {
 }
 
 export async function deleteArchive(id: number) {
-  const res = await fetch(`${API_BASE}/bills/archives/${id}`, {
+  const res = await fetchWithRetry(`${API_BASE}/bills/archives/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete archive');
