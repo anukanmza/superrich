@@ -171,8 +171,34 @@ export default function AnalysisPage() {
 
   const [analysisTab, setAnalysisTab] = useState<'risk' | 'ai'>('risk');
   const [aiAnalysisText, setAiAnalysisText] = useState<string | null>(null);
+  const [aiPredictedTop3, setAiPredictedTop3] = useState<string[]>([]);
+  const [aiPredictedTop2, setAiPredictedTop2] = useState<string[]>([]);
+  const [aiPredictedBot2, setAiPredictedBot2] = useState<string[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  
+  const [aiStats, setAiStats] = useState<any>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newPeriod, setNewPeriod] = useState('');
+  const [newTop3, setNewTop3] = useState('');
+  const [newBot2, setNewBot2] = useState('');
+  const [isAddingHistory, setIsAddingHistory] = useState(false);
+
+  useEffect(() => {
+    if (analysisTab === 'ai' && !aiStats) {
+      loadAiStats();
+    }
+  }, [analysisTab]);
+
+  const loadAiStats = async () => {
+    try {
+      const { getAiStats } = await import('../../lib/api');
+      const stats = await getAiStats();
+      setAiStats(stats);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleRunAi = async () => {
     setIsAiLoading(true);
@@ -182,11 +208,38 @@ export default function AnalysisPage() {
       const { getAnalysis } = await import('../../lib/api');
       const result = await getAnalysis();
       setAiAnalysisText(result.analysis);
+      setAiPredictedTop3(result.predictedTop3 || []);
+      setAiPredictedTop2(result.predictedTop2 || []);
+      setAiPredictedBot2(result.predictedBot2 || []);
+      loadAiStats(); // reload stats
     } catch (err: any) {
       console.error(err);
       setAiError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  const handleAddHistory = async () => {
+    if (!newPeriod || !newTop3 || !newBot2) {
+      setAiError('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+    setIsAddingHistory(true);
+    try {
+      const { addAiHistory } = await import('../../lib/api');
+      await addAiHistory({ period: newPeriod, top3: newTop3, bot2: newBot2 });
+      setShowAddForm(false);
+      setNewPeriod('');
+      setNewTop3('');
+      setNewBot2('');
+      setAiError(null);
+      loadAiStats();
+      alert('เพิ่มข้อมูลประวัติสำเร็จ!');
+    } catch (err: any) {
+      setAiError('ไม่สามารถเพิ่มข้อมูลได้: ' + err.message);
+    } finally {
+      setIsAddingHistory(false);
     }
   };
 
@@ -229,22 +282,93 @@ export default function AnalysisPage() {
       </div>
 
       {analysisTab === 'ai' ? (
-        <div className="flex flex-col items-center mt-8">
-          <p className="text-[#6c7086] mb-8 text-center max-w-2xl">
-            ระบบใช้ AI อัจฉริยะ (Gemini) วิเคราะห์ผลรางวัลย้อนหลัง 5 ปี (จำลอง) ร่วมกับสถิติการออกรางวัล เช่น เลขเบิ้ล เลขหาม และรูปแบบความน่าจะเป็น รวมถึงพฤติกรรมการล็อคเลขของรัฐบาล เพื่อหาตัวเลขที่มีโอกาสออกมากที่สุด
-          </p>
+        <div className="flex flex-col items-center mt-4 pb-12">
           
-          <button
-            onClick={handleRunAi}
-            disabled={isAiLoading}
-            className={`flex items-center gap-2 px-8 py-3 rounded-lg font-bold text-lg transition-all mb-8 ${
-              isAiLoading 
-                ? 'bg-[#181825] text-[#6c7086] cursor-not-allowed' 
-                : 'bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] text-[#11111b] hover:opacity-90 shadow-[0_0_15px_rgba(203,166,247,0.3)]'
-            }`}
-          >
-            {isAiLoading ? '⏳ กำลังประมวลผลข้อมูลมหาศาล...' : '✨ เริ่มการวิเคราะห์เชิงลึก'}
-          </button>
+          {/* Top Panel: Stats & Controls */}
+          <div className="w-full max-w-5xl flex gap-6 mb-8 items-start justify-center flex-wrap">
+            
+            {/* Stats Box */}
+            {aiStats && (
+              <div className="bg-[#11151e] border border-[#2a3244] rounded-xl p-4 flex-1 min-w-[300px] shadow-lg">
+                <h3 className="text-[#a6e3a1] font-bold text-lg mb-3 flex items-center gap-2">
+                  <span className="text-xl">🎯</span> สถิติความแม่นยำของ AI
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm text-[#cdd6f4]">
+                  <div className="bg-[#1e1e2e] p-3 rounded-lg">
+                    <div className="text-[#6c7086] text-xs mb-1">จำนวนครั้งที่ทำนาย</div>
+                    <div className="font-bold text-lg text-[#89b4fa]">{aiStats.totalPredictions} ครั้ง</div>
+                  </div>
+                  <div className="bg-[#1e1e2e] p-3 rounded-lg">
+                    <div className="text-[#6c7086] text-xs mb-1">ฐานข้อมูลย้อนหลัง</div>
+                    <div className="font-bold text-lg text-[#cba6f7]">{aiStats.totalHistorical} งวด</div>
+                  </div>
+                  <div className="bg-[#1e1e2e] p-3 rounded-lg col-span-2">
+                    <div className="text-[#6c7086] text-xs mb-2">อัตราความแม่นยำ (ตัวอย่าง)</div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[#f9e2af]">3 ตัวบน: <span className="font-bold">{aiStats.accuracyTop3}</span></span>
+                      <span className="text-[#89dceb]">2 ตัวบน: <span className="font-bold">{aiStats.accuracyTop2}</span></span>
+                      <span className="text-[#f38ba8]">2 ตัวล่าง: <span className="font-bold">{aiStats.accuracyBot2}</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Actions Box */}
+            <div className="bg-[#11151e] border border-[#2a3244] rounded-xl p-6 flex-1 min-w-[300px] shadow-lg flex flex-col justify-center items-center relative">
+              <p className="text-[#6c7086] mb-6 text-center text-sm">
+                ระบบใช้ AI อัจฉริยะวิเคราะห์ผลรางวัลย้อนหลัง ร่วมกับสถิติและการล็อคเลข เพื่อหาเลขที่มีโอกาสออกมากที่สุด 8 ชุด
+              </p>
+              
+              <button
+                onClick={handleRunAi}
+                disabled={isAiLoading}
+                className={`flex items-center gap-2 px-8 py-3 rounded-lg font-bold text-lg transition-all w-full justify-center ${
+                  isAiLoading 
+                    ? 'bg-[#181825] text-[#6c7086] cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] text-[#11111b] hover:opacity-90 shadow-[0_0_15px_rgba(203,166,247,0.3)]'
+                }`}
+              >
+                {isAiLoading ? '⏳ กำลังประมวลผลข้อมูล...' : '✨ เริ่มการวิเคราะห์เชิงลึก'}
+              </button>
+              
+              <button 
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="mt-4 text-xs text-[#89b4fa] hover:underline"
+              >
+                + เพิ่มผลรางวัลงวดล่าสุดให้ AI เรียนรู้
+              </button>
+            </div>
+          </div>
+
+          {/* Add History Form */}
+          {showAddForm && (
+            <div className="w-full max-w-2xl bg-[#1e1e2e] border border-[#cba6f7]/30 rounded-xl p-6 shadow-xl mb-8 transition-all animate-fadeIn">
+              <h3 className="text-[#cba6f7] font-bold mb-4 flex items-center gap-2">
+                📚 สอน AI ให้เก่งขึ้น (เพิ่มประวัติใหม่)
+              </h3>
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <label className="text-xs text-[#6c7086] block mb-1">ชื่องวด (เช่น 16 พฤศจิกายน 2568)</label>
+                  <input type="text" value={newPeriod} onChange={e => setNewPeriod(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4]" placeholder="งวดวันที่..." />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-[#6c7086] block mb-1">ผล 3 ตัวบน</label>
+                  <input type="text" value={newTop3} onChange={e => setNewTop3(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4]" placeholder="เช่น 123" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-[#6c7086] block mb-1">ผล 2 ตัวล่าง</label>
+                  <input type="text" value={newBot2} onChange={e => setNewBot2(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4]" placeholder="เช่น 45" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowAddForm(false)} className="px-4 py-2 rounded bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a]">ยกเลิก</button>
+                <button onClick={handleAddHistory} disabled={isAddingHistory} className="px-4 py-2 rounded bg-[#a6e3a1] text-[#11111b] hover:bg-[#a6e3a1]/80 font-bold">
+                  {isAddingHistory ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {aiError && (
             <div className="w-full max-w-3xl bg-[#f38ba8]/10 border border-[#f38ba8]/30 rounded-lg p-4 text-[#f38ba8] mb-6 text-center">
@@ -252,9 +376,48 @@ export default function AnalysisPage() {
             </div>
           )}
 
+          {/* AI Result Sets */}
+          {aiPredictedTop3.length > 0 && (
+            <div className="w-full max-w-5xl mb-6">
+              <h3 className="text-[#89b4fa] font-bold text-xl mb-4 border-b border-[#2a3244] pb-2">🎯 8 ชุดตัวเลขเด่นประจำงวด</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4">
+                  <div className="text-center font-bold text-[#f9e2af] mb-3">3 ตัวบน</div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {aiPredictedTop3.map((num, i) => (
+                      <span key={i} className="px-3 py-1 bg-[#f9e2af]/10 border border-[#f9e2af]/30 rounded text-[#f9e2af] text-lg font-mono">{num}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4">
+                  <div className="text-center font-bold text-[#89dceb] mb-3">2 ตัวบน</div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {aiPredictedTop2.map((num, i) => (
+                      <span key={i} className="px-3 py-1 bg-[#89dceb]/10 border border-[#89dceb]/30 rounded text-[#89dceb] text-lg font-mono">{num}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4">
+                  <div className="text-center font-bold text-[#f38ba8] mb-3">2 ตัวล่าง</div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {aiPredictedBot2.map((num, i) => (
+                      <span key={i} className="px-3 py-1 bg-[#f38ba8]/10 border border-[#f38ba8]/30 rounded text-[#f38ba8] text-lg font-mono">{num}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* AI Analysis Text */}
           {aiAnalysisText && (
-            <div className="w-full max-w-4xl bg-[#11151e] border border-[#2a3244] rounded-xl p-6 shadow-xl text-[#cdd6f4] whitespace-pre-wrap leading-relaxed">
-              {aiAnalysisText}
+            <div className="w-full max-w-5xl bg-[#11151e] border border-[#2a3244] rounded-xl p-6 shadow-xl text-[#cdd6f4] whitespace-pre-wrap leading-relaxed relative">
+              <div className="absolute top-0 right-0 px-4 py-1 bg-[#2a3244] text-[#a6adc8] text-xs rounded-bl-lg rounded-tr-xl font-bold">
+                บทวิเคราะห์เชิงลึก
+              </div>
+              <div className="pt-2">
+                {aiAnalysisText}
+              </div>
             </div>
           )}
         </div>

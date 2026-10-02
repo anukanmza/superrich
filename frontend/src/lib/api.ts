@@ -183,3 +183,25 @@ export async function getAnalysis() {
   if (!res.ok) throw new Error('Failed to fetch analysis');
   return res.json();
 }
+
+export async function getAiHistory() {
+  const res = await fetchWithRetry(`${API_BASE}/analysis/history`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch AI history');
+  return res.json();
+}
+
+export async function getAiStats() {
+  const res = await fetchWithRetry(`${API_BASE}/analysis/stats`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch AI stats');
+  return res.json();
+}
+
+export async function addAiHistory(data: { period: string, top3: string, bot2: string }) {
+  const res = await fetchWithRetry(`${API_BASE}/analysis/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to add AI history');
+  return res.json();
+}

@@ -51,3 +51,20 @@ model PeriodArchive {
   settings  String   @default("{}") // JSON string of all settings
   createdAt DateTime @default(now())
 }
+
+model AiHistoricalData {
+  id        Int      @id @default(autoincrement())
+  period    String   @unique
+  top3      String
+  bot2      String
+  createdAt DateTime @default(now())
+}
+
+model AiPrediction {
+  id            Int      @id @default(autoincrement())
+  targetPeriod  String   // The period this prediction was made for
+  predictedTop3 String   // JSON array of strings
+  predictedTop2 String   // JSON array of strings
+  predictedBot2 String   // JSON array of strings
+  createdAt     DateTime @default(now())
+}
