@@ -9,9 +9,8 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
   
   app.enableCors({
-    origin: ['http://localhost:3001', 'https://superrich-lotto.vercel.app'],
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
   });
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
