@@ -29,6 +29,7 @@ export default function OverviewPage() {
   // UI States
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set(ALL_TYPES));
   const [sortAsc, setSortAsc] = useState(false);
+  const [sortByKeepDesc, setSortByKeepDesc] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
@@ -108,6 +109,11 @@ export default function OverviewPage() {
     filteredRows.sort((a, b) => {
       const aNum = parseInt(a.num) || 0;
       const bNum = parseInt(b.num) || 0;
+      
+      if (sortByKeepDesc) {
+        return (b.keep - a.keep) || (b.rawTotal - a.rawTotal) || (aNum - bNum) || a.type.localeCompare(b.type);
+      }
+      
       if (sortAsc) {
         return (aNum - bNum) || a.type.localeCompare(b.type);
       }
@@ -115,7 +121,7 @@ export default function OverviewPage() {
     });
 
     return { rows: filteredRows, baseRows: allBaseRows };
-  }, [bills, cutoutHistory, keeps, specificLimits, selectedTypes, sortAsc]);
+  }, [bills, cutoutHistory, keeps, specificLimits, selectedTypes, sortAsc, sortByKeepDesc]);
 
   const toggleType = (t: string) => {
     const newSet = new Set(selectedTypes);
@@ -220,10 +226,26 @@ export default function OverviewPage() {
           <input 
             type="checkbox" 
             checked={sortAsc}
-            onChange={(e) => setSortAsc(e.target.checked)}
+            onChange={(e) => {
+              setSortAsc(e.target.checked);
+              if (e.target.checked) setSortByKeepDesc(false);
+            }}
             className="accent-[#f9e2af]"
           />
           เรียงเลขน้อย → มาก
+        </label>
+
+        <label className="flex items-center gap-1 text-[10px] text-[#a6e3a1] bg-[#1a3a20] border border-[#2d6b36] rounded px-2 py-1 cursor-pointer select-none">
+          <input 
+            type="checkbox" 
+            checked={sortByKeepDesc}
+            onChange={(e) => {
+              setSortByKeepDesc(e.target.checked);
+              if (e.target.checked) setSortAsc(false);
+            }}
+            className="accent-[#a6e3a1]"
+          />
+          เรียงยอดรับจริงมาก → น้อย
         </label>
 
         <div className="ml-auto flex gap-2">
