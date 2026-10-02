@@ -177,3 +177,9 @@ export async function deleteArchive(id: number) {
   if (!res.ok) throw new Error('Failed to delete archive');
   return res.json();
 }
+
+export async function getAnalysis() {
+  const res = await fetchWithRetry(`${API_BASE}/analysis`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch analysis');
+  return res.json();
+}

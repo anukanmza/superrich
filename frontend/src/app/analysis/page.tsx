@@ -168,30 +168,96 @@ export default function AnalysisPage() {
     };
   }, [customers, bills, keeps, specificLimits, cutoutHistory, rates, specificRates, viewMode, simDiscount, simRateAdjust, simLimitTop3, simLimitTod3, simLimitTop2, simLimitBot2]);
 
+  const [analysisTab, setAnalysisTab] = useState<'risk' | 'ai'>('risk');
+  const [aiAnalysisText, setAiAnalysisText] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleRunAi = async () => {
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      // Need to use dynamic import or the api client if available
+      const { getAnalysis } = await import('../../lib/api');
+      const result = await getAnalysis();
+      setAiAnalysisText(result.analysis);
+    } catch (err: any) {
+      console.error(err);
+      setAiError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   if (isLoading) return <div className="p-8 text-[#cdd6f4]">กำลังโหลดโมเดลวิเคราะห์...</div>;
 
   return (
     <div className="flex flex-col h-full bg-[#0a0e14] overflow-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-[#89b4fa]">📊 วิเคราะห์ความเสี่ยง (Risk Analysis)</h2>
-          <div className="text-xs text-[#6c7086] mt-1">จำลองผลหวยทุกรูปแบบ เพื่อดูความเสี่ยงและจุดที่ต้องระวัง</div>
-        </div>
-        <div className="flex gap-2">
+      <div className="flex justify-between items-center mb-6 border-b border-[#1e2433] pb-4">
+        <div className="flex gap-4">
           <button 
-            onClick={() => setViewMode('gross')}
-            className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${viewMode === 'gross' ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244]'}`}
+            onClick={() => setAnalysisTab('risk')}
+            className={`text-xl font-bold pb-2 border-b-2 transition-colors ${analysisTab === 'risk' ? 'text-[#89b4fa] border-[#89b4fa]' : 'text-[#6c7086] border-transparent hover:text-[#cdd6f4]'}`}
           >
-            วิเคราะห์ยอดรวม (Gross)
+            📊 วิเคราะห์ความเสี่ยง (Risk)
           </button>
           <button 
-            onClick={() => setViewMode('keep')}
-            className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${viewMode === 'keep' ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244]'}`}
+            onClick={() => setAnalysisTab('ai')}
+            className={`text-xl font-bold pb-2 border-b-2 transition-colors ${analysisTab === 'ai' ? 'text-[#cba6f7] border-[#cba6f7]' : 'text-[#6c7086] border-transparent hover:text-[#cdd6f4]'}`}
           >
-            วิเคราะห์ยอดที่เก็บจริง (Keep)
+            🤖 AI ช่วยวิเคราะห์หวย
           </button>
         </div>
+        
+        {analysisTab === 'risk' && (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setViewMode('gross')}
+              className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${viewMode === 'gross' ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244]'}`}
+            >
+              วิเคราะห์ยอดรวม (Gross)
+            </button>
+            <button 
+              onClick={() => setViewMode('keep')}
+              className={`px-4 py-2 rounded text-sm font-bold border transition-colors ${viewMode === 'keep' ? 'bg-[#1e2d3d] text-[#89b4fa] border-[#2a4a6b]' : 'bg-[#11151e] text-[#6c7086] border-[#2a3244]'}`}
+            >
+              วิเคราะห์ยอดที่เก็บจริง (Keep)
+            </button>
+          </div>
+        )}
       </div>
+
+      {analysisTab === 'ai' ? (
+        <div className="flex flex-col items-center mt-8">
+          <p className="text-[#6c7086] mb-8 text-center max-w-2xl">
+            ระบบใช้ AI อัจฉริยะ (Gemini) วิเคราะห์ผลรางวัลย้อนหลัง 5 ปี (จำลอง) ร่วมกับสถิติการออกรางวัล เช่น เลขเบิ้ล เลขหาม และรูปแบบความน่าจะเป็น รวมถึงพฤติกรรมการล็อคเลขของรัฐบาล เพื่อหาตัวเลขที่มีโอกาสออกมากที่สุด
+          </p>
+          
+          <button
+            onClick={handleRunAi}
+            disabled={isAiLoading}
+            className={`flex items-center gap-2 px-8 py-3 rounded-lg font-bold text-lg transition-all mb-8 ${
+              isAiLoading 
+                ? 'bg-[#181825] text-[#6c7086] cursor-not-allowed' 
+                : 'bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] text-[#11111b] hover:opacity-90 shadow-[0_0_15px_rgba(203,166,247,0.3)]'
+            }`}
+          >
+            {isAiLoading ? '⏳ กำลังประมวลผลข้อมูลมหาศาล...' : '✨ เริ่มการวิเคราะห์เชิงลึก'}
+          </button>
+
+          {aiError && (
+            <div className="w-full max-w-3xl bg-[#f38ba8]/10 border border-[#f38ba8]/30 rounded-lg p-4 text-[#f38ba8] mb-6 text-center">
+              {aiError}
+            </div>
+          )}
+
+          {aiAnalysisText && (
+            <div className="w-full max-w-4xl bg-[#11151e] border border-[#2a3244] rounded-xl p-6 shadow-xl text-[#cdd6f4] whitespace-pre-wrap leading-relaxed">
+              {aiAnalysisText}
+            </div>
+          )}
+        </div>
+      ) : (
 
       {/* Settings Sandbox */}
       <div className="bg-[#11151e] border border-[#2a4a6b] rounded-lg p-4 mb-4 flex flex-col gap-3 shrink-0">
@@ -324,6 +390,7 @@ export default function AnalysisPage() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
