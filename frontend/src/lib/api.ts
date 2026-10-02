@@ -140,6 +140,14 @@ export async function archiveCurrentPeriod(periodName: string, cutoutsJson: stri
   return res.json();
 }
 
+export async function deleteCustomer(id: number) {
+  const res = await fetch(`${API_BASE}/customers/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete customer');
+  return res.json();
+}
+
 export async function deleteArchive(id: number) {
   const res = await fetch(`${API_BASE}/bills/archives/${id}`, {
     method: 'DELETE',

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchCustomers, createCustomer, updateCustomer, Customer } from '../../../lib/api';
+import { fetchCustomers, createCustomer, updateCustomer, deleteCustomer, Customer } from '../../../lib/api';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -46,6 +46,16 @@ export default function CustomersPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('ยืนยันการลบลูกค้ารายนี้? (ระวัง: หากลูกค้ามีบิลอยู่ การลบอาจทำให้ข้อมูลบิลมีปัญหา แนะนำให้แก้ไขชื่อแทน)')) return;
+    try {
+      await deleteCustomer(id);
+      loadCustomers();
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการลบข้อมูลลูกค้า หรือลูกค้ารายนี้มีข้อมูลบิลผูกอยู่');
+    }
   };
 
   const handleSave = async () => {
@@ -117,9 +127,15 @@ export default function CustomersPage() {
                 <button className="flex-1 bg-[#0d1117] border border-[#2a3244] text-[#89b4fa] text-xs py-1.5 rounded hover:bg-[#1e2d3d]">เลือก</button>
                 <button 
                   onClick={() => openModal(c)}
-                  className="flex-1 bg-[#0d1117] border border-[#2a3244] text-[#6c7086] text-xs py-1.5 rounded hover:text-[#f9e2af] hover:border-[#6b5929]"
+                  className="flex-1 bg-[#0d1117] border border-[#2a3244] text-[#a6e3a1] text-xs py-1.5 rounded hover:border-[#a6e3a1]"
                 >
                   แก้ไข
+                </button>
+                <button 
+                  onClick={() => handleDelete(c.id)}
+                  className="flex-1 bg-[#0d1117] border border-[#2a3244] text-[#f38ba8] text-xs py-1.5 rounded hover:border-[#f38ba8]"
+                >
+                  ลบ
                 </button>
               </div>
             </div>

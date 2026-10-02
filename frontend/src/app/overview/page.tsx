@@ -177,9 +177,15 @@ export default function OverviewPage() {
   const filterTotalSent = rows.reduce((s, r) => s + r.sent, 0);
   const filterTotalPending = rows.reduce((s, r) => s + r.pending, 0);
 
-  const counts: Record<string, number> = {};
-  ALL_TYPES.forEach(t => counts[t] = 0);
-  rows.forEach(r => { if (counts[r.type] !== undefined) counts[r.type]++; });
+  const typeStats: Record<string, { count: number, rawTotal: number, keep: number }> = {};
+  ALL_TYPES.forEach(t => typeStats[t] = { count: 0, rawTotal: 0, keep: 0 });
+  rows.forEach(r => { 
+    if (typeStats[r.type]) {
+      typeStats[r.type].count++;
+      typeStats[r.type].rawTotal += r.rawTotal;
+      typeStats[r.type].keep += r.keep;
+    }
+  });
 
   return (
     <div className="flex flex-col h-full bg-[#0a0e14] overflow-hidden">
@@ -277,13 +283,17 @@ export default function OverviewPage() {
         </div>
 
         {/* Counts Pill */}
-        <div className="bg-[#11151e] border border-[#1e2433] rounded-lg p-2.5 mb-3 flex flex-wrap gap-2 items-center shrink-0">
-          <span className="text-[10px] text-[#6c7086] mr-1">จำนวนเลขที่มียอดแยกตามประเภท:</span>
-          {ALL_TYPES.map(t => (
-            <span key={t} className="inline-block px-2 py-1 rounded text-[10px] font-bold border border-[#2a3244] bg-[#0d1117] text-[#cdd6f4]">
-              {t} : {counts[t]}
-            </span>
-          ))}
+        <div className="bg-[#11151e] border border-[#1e2433] rounded-lg p-3 mb-3 shrink-0">
+          <div className="text-[10px] text-[#6c7086] mb-2 font-bold">ยอดแยกตามประเภทเลข (จากตัวกรอง):</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+            {ALL_TYPES.map(t => (
+              <div key={t} className="bg-[#0d1117] border border-[#2a3244] rounded p-2 text-center flex flex-col gap-1">
+                <div className="text-[11px] font-bold text-[#cdd6f4] border-b border-[#1e2433] pb-1">{t} <span className="text-[9px] font-normal text-[#6c7086]">({typeStats[t].count} เลข)</span></div>
+                <div className="text-[10px] text-[#6c7086] mt-1">รับรวม: <span className="text-[#cdd6f4]">฿{typeStats[t].rawTotal.toLocaleString()}</span></div>
+                <div className="text-[10px] text-[#6c7086]">รับจริง: <span className="text-[#a6e3a1] font-bold">฿{typeStats[t].keep.toLocaleString()}</span></div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Table */}
