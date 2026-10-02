@@ -259,7 +259,7 @@ export default function AnalysisPage() {
           )}
         </div>
       ) : (
-
+      <>
       {/* Settings Sandbox */}
       <div className="bg-[#11151e] border border-[#2a4a6b] rounded-lg p-4 mb-4 flex flex-col gap-3 shrink-0">
         <div className="flex flex-col border-b border-[#2a3244] pb-2">
@@ -391,7 +391,7 @@ export default function AnalysisPage() {
           </div>
         ))}
       </div>
-      )}
+      </>)}
     </div>
   );
 }
