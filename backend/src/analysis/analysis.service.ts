@@ -68,7 +68,12 @@ ${historyDataStr}
       
       let resultObj;
       try {
-        resultObj = JSON.parse(rawText);
+        let cleanText = rawText.trim();
+        if (cleanText.startsWith('```json')) cleanText = cleanText.substring(7);
+        if (cleanText.startsWith('```')) cleanText = cleanText.substring(3);
+        if (cleanText.endsWith('```')) cleanText = cleanText.substring(0, cleanText.length - 3);
+        cleanText = cleanText.trim();
+        resultObj = JSON.parse(cleanText);
       } catch (e) {
         throw new Error("Invalid JSON from Gemini: " + rawText);
       }
