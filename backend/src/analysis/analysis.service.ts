@@ -45,22 +45,34 @@ ${historyDataStr}
 ห้ามมีข้อความอื่นนอกเหนือจาก JSON object
 `;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1500,
-            responseMimeType: "application/json"
-          }
-        })
-      });
+      const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro-latest'];
+      let response;
+      let lastErrorData;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Gemini API Error: ${JSON.stringify(errorData)}`);
+      for (const model of modelsToTry) {
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 1500,
+              responseMimeType: "application/json"
+            }
+          })
+        });
+
+        if (response.ok) {
+          break;
+        } else {
+          lastErrorData = await response.json();
+          console.log(`Model ${model} failed:`, lastErrorData);
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw new Error(`Gemini API Error (Tried all models): ${JSON.stringify(lastErrorData)}`);
       }
 
       const data = await response.json();
