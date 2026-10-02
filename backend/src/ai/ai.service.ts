@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 @Injectable()
@@ -7,9 +7,9 @@ export class AiService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getPredictions() {
-    // ดึงข้อมูล 24 งวดล่าสุด
+    // ดึงข้อมูลย้อนหลัง 5 ปี (ประมาณ 120 งวด)
     const history = await this.prisma.periodArchive.findMany({
-      take: 24,
+      take: 120,
       orderBy: { id: 'desc' },
     });
 
@@ -27,8 +27,9 @@ export class AiService {
     }).join('\n');
 
     const prompt = `
-คุณคือระบบ AI ผู้เชี่ยวชาญด้านสถิติความน่าจะเป็น นี่คือข้อมูลสถิติผลการออกรางวัลย้อนหลัง 24 งวดล่าสุด:
+คุณคือระบบ AI ผู้เชี่ยวชาญด้านสถิติความน่าจะเป็น นี่คือข้อมูลสถิติผลการออกรางวัลย้อนหลัง 5 ปี (ประมาณ 120 งวด):
 ${statsText}
+
 
 จงวิเคราะห์ข้อมูลทั้งหมดเพื่อหาแพทเทิร์น และให้คำแนะนำสำหรับงวดถัดไปดังนี้:
 1. เลข 3 ตัวบน ที่มีโอกาสออกมากที่สุด 8 ชุด พร้อมเหตุผลสั้นๆ เชิงสถิติ (เช่น ออกบ่อย, เลขขาดหาย)
