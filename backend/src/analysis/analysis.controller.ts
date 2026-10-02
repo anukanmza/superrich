@@ -16,7 +16,7 @@ export class AnalysisController {
   }
 
   @Post('history')
-  async addHistory(@Body() body: { period: string, top3: string, bot2: string }) {
+  async addHistory(@Body() body: { period: string, top3: string, bot2: string, aiTop3?: string[], aiTop2?: string[], aiBot2?: string[] }) {
     return this.analysisService.addHistory(body);
   }
 

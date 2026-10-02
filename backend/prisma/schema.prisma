@@ -53,11 +53,17 @@ model PeriodArchive {
 }
 
 model AiHistoricalData {
-  id        Int      @id @default(autoincrement())
-  period    String   @unique
-  top3      String
-  bot2      String
-  createdAt DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  period          String   @unique
+  top3            String
+  bot2            String
+  aiPredictedTop3 String?  // JSON string
+  aiPredictedTop2 String?  // JSON string
+  aiPredictedBot2 String?  // JSON string
+  isHitTop3       Boolean? @default(false)
+  isHitTop2       Boolean? @default(false)
+  isHitBot2       Boolean? @default(false)
+  createdAt       DateTime @default(now())
 }
 
 model AiPrediction {

@@ -20,10 +20,17 @@ export class AnalysisService {
       
       let historyDataStr = "";
       if (historyRecords.length > 0) {
-        historyDataStr = JSON.stringify(historyRecords.map(r => ({ period: r.period, '3บน': r.top3, '2ล่าง': r.bot2 })));
+        historyDataStr = JSON.stringify(historyRecords.map(r => {
+          let rec: any = { period: r.period, '3บนออก': r.top3, '2ล่างออก': r.bot2 };
+          if (r.aiPredictedTop3) {
+            rec['ทาย3บนถูกไหม'] = r.isHitTop3 ? 'ถูก' : 'ผิด';
+            rec['ทาย2บนถูกไหม'] = r.isHitTop2 ? 'ถูก' : 'ผิด';
+            rec['ทาย2ล่างถูกไหม'] = r.isHitBot2 ? 'ถูก' : 'ผิด';
+          }
+          return rec;
+        }));
       } else {
-        // Fallback to default if DB is empty
-        historyDataStr = JSON.stringify(defaultHistoricalData);
+        historyDataStr = "ยังไม่มีประวัติงวดก่อนหน้า";
       }
 
       // Call Gemini API directly via fetch, requesting JSON format
@@ -131,37 +138,61 @@ ${historyDataStr}
     });
   }
 
-  async addHistory(data: { period: string, top3: string, bot2: string }) {
+  async addHistory(data: { period: string, top3: string, bot2: string, aiTop3?: string[], aiTop2?: string[], aiBot2?: string[] }) {
     if (!data.period || !data.top3 || !data.bot2) {
       throw new HttpException('Missing required fields', HttpStatus.BAD_REQUEST);
     }
+    
+    const isHitTop3 = data.aiTop3 ? data.aiTop3.includes(data.top3) : false;
+    // 2 ตัวบน คือ 2 ตัวท้ายของรางวัลที่ 1 (3ตัวบน)
+    const actualTop2 = data.top3.length >= 2 ? data.top3.substring(data.top3.length - 2) : '';
+    const isHitTop2 = data.aiTop2 ? data.aiTop2.includes(actualTop2) : false;
+    const isHitBot2 = data.aiBot2 ? data.aiBot2.includes(data.bot2) : false;
+
     return this.prisma.aiHistoricalData.create({
       data: {
         period: data.period,
         top3: data.top3,
-        bot2: data.bot2
+        bot2: data.bot2,
+        aiPredictedTop3: data.aiTop3 ? JSON.stringify(data.aiTop3) : null,
+        aiPredictedTop2: data.aiTop2 ? JSON.stringify(data.aiTop2) : null,
+        aiPredictedBot2: data.aiBot2 ? JSON.stringify(data.aiBot2) : null,
+        isHitTop3,
+        isHitTop2,
+        isHitBot2
       }
     });
   }
 
   async getStats() {
-    // A simple mock for now, or actual calculation if enough data exists.
-    // In a real scenario, you'd compare AiPrediction against AiHistoricalData.
-    // We'll return dummy stats to satisfy the UI requirement quickly, but structure it 
-    // so we can wire it up fully later.
-    
     const predictionsCount = await this.prisma.aiPrediction.count();
     const historyCount = await this.prisma.aiHistoricalData.count();
 
-    // Ideally, we'd join prediction and history on period name, but since period names 
-    // might not match perfectly without strict validation, we'll return a placeholder % for now.
-    
+    // Calculate real accuracy from DB
+    const evaluatedRecords = await this.prisma.aiHistoricalData.findMany({
+      where: { aiPredictedTop3: { not: null } }
+    });
+
+    let accuracyTop3 = "0%";
+    let accuracyTop2 = "0%";
+    let accuracyBot2 = "0%";
+
+    if (evaluatedRecords.length > 0) {
+      const top3Hits = evaluatedRecords.filter(r => r.isHitTop3).length;
+      const top2Hits = evaluatedRecords.filter(r => r.isHitTop2).length;
+      const bot2Hits = evaluatedRecords.filter(r => r.isHitBot2).length;
+      
+      accuracyTop3 = Math.round((top3Hits / evaluatedRecords.length) * 100) + "%";
+      accuracyTop2 = Math.round((top2Hits / evaluatedRecords.length) * 100) + "%";
+      accuracyBot2 = Math.round((bot2Hits / evaluatedRecords.length) * 100) + "%";
+    }
+
     return {
       totalPredictions: predictionsCount,
-      totalHistorical: historyCount + defaultHistoricalData.length,
-      accuracyTop3: "15%", // Example placeholder
-      accuracyTop2: "22%",
-      accuracyBot2: "25%",
+      totalHistorical: historyCount,
+      accuracyTop3,
+      accuracyTop2,
+      accuracyBot2,
       lastChecked: new Date().toISOString()
     };
   }

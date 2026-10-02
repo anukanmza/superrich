@@ -182,60 +182,37 @@ export default function AnalysisPage() {
   const [newPeriod, setNewPeriod] = useState('');
   const [newTop3, setNewTop3] = useState('');
   const [newBot2, setNewBot2] = useState('');
-  const [isAddingHistory, setIsAddingHistory] = useState(false);
-
-  useEffect(() => {
-    if (analysisTab === 'ai' && !aiStats) {
-      loadAiStats();
-    }
-  }, [analysisTab]);
-
-  const loadAiStats = async () => {
-    try {
-      const { getAiStats } = await import('../../lib/api');
-      const stats = await getAiStats();
-      setAiStats(stats);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleRunAi = async () => {
-    setIsAiLoading(true);
-    setAiError(null);
-    try {
-      // Need to use dynamic import or the api client if available
-      const { getAnalysis } = await import('../../lib/api');
-      const result = await getAnalysis();
-      setAiAnalysisText(result.analysis);
-      setAiPredictedTop3(result.predictedTop3 || []);
-      setAiPredictedTop2(result.predictedTop2 || []);
-      setAiPredictedBot2(result.predictedBot2 || []);
-      loadAiStats(); // reload stats
-    } catch (err: any) {
-      console.error(err);
-      setAiError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง');
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
+  const [aiTop3, setAiTop3] = useState('');
+  const [aiTop2, setAiTop2] = useState('');
+  const [aiBot2, setAiBot2] = useState('');
 
   const handleAddHistory = async () => {
     if (!newPeriod || !newTop3 || !newBot2) {
-      setAiError('กรุณากรอกข้อมูลให้ครบถ้วน');
+      setAiError('กรุณากรอกงวดและผลรางวัลให้ครบถ้วน');
       return;
     }
     setIsAddingHistory(true);
     try {
       const { addAiHistory } = await import('../../lib/api');
-      await addAiHistory({ period: newPeriod, top3: newTop3, bot2: newBot2 });
+      
+      const payload: any = { period: newPeriod, top3: newTop3, bot2: newBot2 };
+      
+      // Parse AI predictions if provided
+      if (aiTop3) payload.aiTop3 = aiTop3.split(',').map(s => s.trim());
+      if (aiTop2) payload.aiTop2 = aiTop2.split(',').map(s => s.trim());
+      if (aiBot2) payload.aiBot2 = aiBot2.split(',').map(s => s.trim());
+
+      await addAiHistory(payload);
       setShowAddForm(false);
       setNewPeriod('');
       setNewTop3('');
       setNewBot2('');
+      setAiTop3('');
+      setAiTop2('');
+      setAiBot2('');
       setAiError(null);
       loadAiStats();
-      alert('เพิ่มข้อมูลประวัติสำเร็จ!');
+      alert('บันทึกผลการทดสอบสำเร็จ!');
     } catch (err: any) {
       setAiError('ไม่สามารถเพิ่มข้อมูลได้: ' + err.message);
     } finally {
@@ -295,15 +272,15 @@ export default function AnalysisPage() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm text-[#cdd6f4]">
                   <div className="bg-[#1e1e2e] p-3 rounded-lg">
-                    <div className="text-[#6c7086] text-xs mb-1">จำนวนครั้งที่ทำนาย</div>
+                    <div className="text-[#6c7086] text-xs mb-1">จำนวนครั้งที่ AI ให้หวย</div>
                     <div className="font-bold text-lg text-[#89b4fa]">{aiStats.totalPredictions} ครั้ง</div>
                   </div>
                   <div className="bg-[#1e1e2e] p-3 rounded-lg">
-                    <div className="text-[#6c7086] text-xs mb-1">ฐานข้อมูลย้อนหลัง</div>
+                    <div className="text-[#6c7086] text-xs mb-1">ประวัติการออกรางวัลจริง</div>
                     <div className="font-bold text-lg text-[#cba6f7]">{aiStats.totalHistorical} งวด</div>
                   </div>
                   <div className="bg-[#1e1e2e] p-3 rounded-lg col-span-2">
-                    <div className="text-[#6c7086] text-xs mb-2">อัตราความแม่นยำ (ตัวอย่าง)</div>
+                    <div className="text-[#6c7086] text-xs mb-2">อัตราความแม่นยำ (จากการบันทึกผล)</div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-[#f9e2af]">3 ตัวบน: <span className="font-bold">{aiStats.accuracyTop3}</span></span>
                       <span className="text-[#89dceb]">2 ตัวบน: <span className="font-bold">{aiStats.accuracyTop2}</span></span>
@@ -336,35 +313,62 @@ export default function AnalysisPage() {
                 onClick={() => setShowAddForm(!showAddForm)}
                 className="mt-4 text-xs text-[#89b4fa] hover:underline"
               >
-                + เพิ่มผลรางวัลงวดล่าสุดให้ AI เรียนรู้
+                📝 บันทึกผลการวิเคราะห์เทียบกับรางวัลจริง
               </button>
             </div>
           </div>
 
           {/* Add History Form */}
           {showAddForm && (
-            <div className="w-full max-w-2xl bg-[#1e1e2e] border border-[#cba6f7]/30 rounded-xl p-6 shadow-xl mb-8 transition-all animate-fadeIn">
-              <h3 className="text-[#cba6f7] font-bold mb-4 flex items-center gap-2">
-                📚 สอน AI ให้เก่งขึ้น (เพิ่มประวัติใหม่)
+            <div className="w-full max-w-4xl bg-[#1e1e2e] border border-[#cba6f7]/30 rounded-xl p-6 shadow-xl mb-8 transition-all animate-fadeIn">
+              <h3 className="text-[#cba6f7] font-bold mb-4 flex items-center gap-2 border-b border-[#313244] pb-2">
+                📝 บันทึกประวัติและตรวจสอบความแม่นยำ AI
               </h3>
-              <div className="flex gap-4 mb-4">
-                <div className="flex-1">
-                  <label className="text-xs text-[#6c7086] block mb-1">ชื่องวด (เช่น 16 พฤศจิกายน 2568)</label>
-                  <input type="text" value={newPeriod} onChange={e => setNewPeriod(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4]" placeholder="งวดวันที่..." />
+              
+              <div className="grid grid-cols-2 gap-8 mb-6">
+                {/* AI Input Section */}
+                <div>
+                  <h4 className="text-[#89b4fa] font-bold mb-3 text-sm">1. เลขที่ AI วิเคราะห์ได้ (คั่นด้วยลูกน้ำ)</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-[#6c7086] block mb-1">AI 3 ตัวบน (เช่น 123, 456)</label>
+                      <input type="text" value={aiTop3} onChange={e => setAiTop3(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#f9e2af] text-sm" placeholder="123, 456..." />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#6c7086] block mb-1">AI 2 ตัวบน (เช่น 12, 34)</label>
+                      <input type="text" value={aiTop2} onChange={e => setAiTop2(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#89dceb] text-sm" placeholder="12, 34..." />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#6c7086] block mb-1">AI 2 ตัวล่าง (เช่น 56, 78)</label>
+                      <input type="text" value={aiBot2} onChange={e => setAiBot2(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#f38ba8] text-sm" placeholder="56, 78..." />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <label className="text-xs text-[#6c7086] block mb-1">ผล 3 ตัวบน</label>
-                  <input type="text" value={newTop3} onChange={e => setNewTop3(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4]" placeholder="เช่น 123" />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs text-[#6c7086] block mb-1">ผล 2 ตัวล่าง</label>
-                  <input type="text" value={newBot2} onChange={e => setNewBot2(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4]" placeholder="เช่น 45" />
+
+                {/* Actual Result Section */}
+                <div>
+                  <h4 className="text-[#a6e3a1] font-bold mb-3 text-sm">2. ผลรางวัลที่ออกจริง</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-[#6c7086] block mb-1">ชื่องวด</label>
+                      <input type="text" value={newPeriod} onChange={e => setNewPeriod(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-sm" placeholder="เช่น 16 พฤศจิกายน 2568" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#6c7086] block mb-1">ผลรางวัล 3 ตัวบน (รางวัลที่ 1)</label>
+                      <input type="text" value={newTop3} onChange={e => setNewTop3(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#a6e3a1] text-sm" placeholder="เช่น 123" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#6c7086] block mb-1">ผลรางวัล 2 ตัวล่าง</label>
+                      <input type="text" value={newBot2} onChange={e => setNewBot2(e.target.value)} className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#a6e3a1] text-sm" placeholder="เช่น 45" />
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <button onClick={() => setShowAddForm(false)} className="px-4 py-2 rounded bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a]">ยกเลิก</button>
-                <button onClick={handleAddHistory} disabled={isAddingHistory} className="px-4 py-2 rounded bg-[#a6e3a1] text-[#11111b] hover:bg-[#a6e3a1]/80 font-bold">
-                  {isAddingHistory ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
+
+              <div className="flex justify-end gap-2 border-t border-[#313244] pt-4">
+                <button onClick={() => setShowAddForm(false)} className="px-6 py-2 rounded bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a] font-bold">ยกเลิก</button>
+                <button onClick={handleAddHistory} disabled={isAddingHistory} className="px-6 py-2 rounded bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] text-[#11111b] hover:opacity-90 font-bold">
+                  {isAddingHistory ? 'กำลังบันทึก...' : 'บันทึกข้อมูล & คำนวณความแม่นยำ'}
                 </button>
               </div>
             </div>
