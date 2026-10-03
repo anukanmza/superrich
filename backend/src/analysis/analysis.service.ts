@@ -117,6 +117,7 @@ ${historyDataStr}
           predictedTop3: JSON.stringify(resultObj.predictedTop3 || []),
           predictedTop2: JSON.stringify(resultObj.predictedTop2 || []),
           predictedBot2: JSON.stringify(resultObj.predictedBot2 || []),
+          analysisText: resultObj.analysisText,
         }
       });
 
@@ -186,10 +187,11 @@ ${historyDataStr}
     if (!latest) return null;
     
     return {
-      analysis: "ผลการวิเคราะห์ล่าสุด (ดึงจากประวัติเดิม)",
+      analysis: latest.analysisText || "ผลการวิเคราะห์ล่าสุด (ดึงจากประวัติเดิม)",
       predictedTop3: JSON.parse(latest.predictedTop3),
       predictedTop2: JSON.parse(latest.predictedTop2),
-      predictedBot2: JSON.parse(latest.predictedBot2)
+      predictedBot2: JSON.parse(latest.predictedBot2),
+      createdAt: latest.createdAt
     };
   }
 

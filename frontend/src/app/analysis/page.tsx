@@ -176,6 +176,8 @@ export default function AnalysisPage() {
   const [aiPredictedBot2, setAiPredictedBot2] = useState<string[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiPredictedAt, setAiPredictedAt] = useState<string | null>(null);
+  const [aiHistoryRecords, setAiHistoryRecords] = useState<any[]>([]);
   
   const [aiStats, setAiStats] = useState<any>(null);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
@@ -196,15 +198,19 @@ export default function AnalysisPage() {
 
   const loadAiStats = async () => {
     try {
-      const { getAiStats, getLatestPrediction } = await import('../../lib/api');
-      const [stats, latest] = await Promise.all([getAiStats(), getLatestPrediction()]);
+      const { getAiStats, getLatestPrediction, getAiHistory } = await import('../../lib/api');
+      const [stats, latest, history] = await Promise.all([getAiStats(), getLatestPrediction(), getAiHistory()]);
       setAiStats(stats);
+      setAiHistoryRecords(history || []);
       
       if (latest && latest.predictedTop3 && latest.predictedTop3.length > 0 && !aiPredictedTop3.length && !aiAnalysisText) {
         setAiAnalysisText(latest.analysis);
         setAiPredictedTop3(latest.predictedTop3);
         setAiPredictedTop2(latest.predictedTop2);
         setAiPredictedBot2(latest.predictedBot2);
+        if (latest.createdAt) {
+          setAiPredictedAt(new Date(latest.createdAt).toLocaleString('th-TH'));
+        }
         
         // Auto-fill inputs for feedback form
         setAiTop3(latest.predictedTop3.join(', '));
@@ -227,6 +233,7 @@ export default function AnalysisPage() {
       setAiPredictedTop3(result.predictedTop3 || []);
       setAiPredictedTop2(result.predictedTop2 || []);
       setAiPredictedBot2(result.predictedBot2 || []);
+      setAiPredictedAt(new Date().toLocaleString('th-TH'));
       
       // Auto-fill feedback form
       setAiTop3((result.predictedTop3 || []).join(', '));
@@ -558,12 +565,59 @@ export default function AnalysisPage() {
 
           {/* AI Analysis Text */}
           {aiAnalysisText && (
-            <div className="w-full max-w-5xl bg-[#11151e] border border-[#2a3244] rounded-xl p-6 shadow-xl text-[#cdd6f4] whitespace-pre-wrap leading-relaxed relative">
-              <div className="absolute top-0 right-0 px-4 py-1 bg-[#2a3244] text-[#a6adc8] text-xs rounded-bl-lg rounded-tr-xl font-bold">
-                บทวิเคราะห์เชิงลึก
+            <div className="w-full max-w-5xl bg-[#11151e] border border-[#2a3244] rounded-xl p-6 shadow-xl text-[#cdd6f4] whitespace-pre-wrap leading-relaxed relative mb-8">
+              <div className="absolute top-0 right-0 px-4 py-1 bg-[#2a3244] text-[#a6adc8] text-xs rounded-bl-lg rounded-tr-xl font-bold flex gap-4">
+                <span>บทวิเคราะห์เชิงลึก</span>
+                {aiPredictedAt && <span className="text-[#89b4fa]">🕒 อัปเดตล่าสุด: {aiPredictedAt}</span>}
               </div>
               <div className="pt-2">
                 {aiAnalysisText}
+              </div>
+            </div>
+          )}
+
+          {/* AI Accuracy History Table */}
+          {aiHistoryRecords.length > 0 && (
+            <div className="w-full max-w-5xl bg-[#11151e] border border-[#2a3244] rounded-xl p-6 shadow-xl mt-4">
+              <h3 className="text-[#cba6f7] font-bold text-lg mb-4 border-b border-[#313244] pb-2 flex items-center gap-2">
+                <span className="text-xl">📜</span> ประวัติการตรวจสอบความแม่นยำ AI ย้อนหลัง
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[#6c7086] border-b border-[#313244] text-left">
+                      <th className="py-2 px-2">งวด</th>
+                      <th className="py-2 px-2">3 ตัวบน (ออกจริง)</th>
+                      <th className="py-2 px-2">2 ตัวล่าง (ออกจริง)</th>
+                      <th className="py-2 px-2">ผล AI ทาย 3 บน</th>
+                      <th className="py-2 px-2">ผล AI ทาย 2 บน</th>
+                      <th className="py-2 px-2">ผล AI ทาย 2 ล่าง</th>
+                      <th className="py-2 px-2">วันที่บันทึก</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {aiHistoryRecords.map((r, i) => {
+                      const hasAi = r.aiPredictedTop3 != null;
+                      return (
+                        <tr key={i} className="border-b border-[#181825] hover:bg-[#181825] transition-colors">
+                          <td className="py-3 px-2 text-[#cdd6f4]">{r.period}</td>
+                          <td className="py-3 px-2 text-[#a6e3a1] font-mono">{r.top3}</td>
+                          <td className="py-3 px-2 text-[#a6e3a1] font-mono">{r.bot2}</td>
+                          {hasAi ? (
+                            <>
+                              <td className={`py-3 px-2 font-bold ${r.isHitTop3 ? 'text-[#a6e3a1]' : 'text-[#f38ba8]'}`}>{r.isHitTop3 ? '✅ ถูก' : '❌ ผิด'}</td>
+                              <td className={`py-3 px-2 font-bold ${r.isHitTop2 ? 'text-[#a6e3a1]' : 'text-[#f38ba8]'}`}>{r.isHitTop2 ? '✅ ถูก' : '❌ ผิด'}</td>
+                              <td className={`py-3 px-2 font-bold ${r.isHitBot2 ? 'text-[#a6e3a1]' : 'text-[#f38ba8]'}`}>{r.isHitBot2 ? '✅ ถูก' : '❌ ผิด'}</td>
+                            </>
+                          ) : (
+                            <td colSpan={3} className="py-3 px-2 text-[#6c7086] text-center italic">ฐานข้อมูลตั้งต้น (ไม่มีการทาย)</td>
+                          )}
+                          <td className="py-3 px-2 text-[#6c7086] text-xs">{new Date(r.createdAt).toLocaleString('th-TH')}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

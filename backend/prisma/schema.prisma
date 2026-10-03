@@ -72,5 +72,6 @@ model AiPrediction {
   predictedTop3 String   // JSON array of strings
   predictedTop2 String   // JSON array of strings
   predictedBot2 String   // JSON array of strings
+  analysisText  String?  // Store the generated AI analysis response
   createdAt     DateTime @default(now())
 }
