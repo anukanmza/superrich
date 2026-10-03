@@ -179,6 +179,11 @@ export default function AnalysisPage() {
   const [aiPredictedAt, setAiPredictedAt] = useState<string | null>(null);
   const [aiHistoryRecords, setAiHistoryRecords] = useState<any[]>([]);
   
+  // AI Settings
+  const [apiKeyOverride, setApiKeyOverride] = useState('');
+  const [modelOverride, setModelOverride] = useState(''); // empty string means default
+  const [showAiSettings, setShowAiSettings] = useState(false);
+  
   const [aiStats, setAiStats] = useState<any>(null);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [showPastDataForm, setShowPastDataForm] = useState(false);
@@ -195,6 +200,24 @@ export default function AnalysisPage() {
       loadAiStats();
     }
   }, [analysisTab]);
+
+  useEffect(() => {
+    // Load saved settings
+    const savedKey = localStorage.getItem('lotto_ai_apikey');
+    if (savedKey) setApiKeyOverride(savedKey);
+    const savedModel = localStorage.getItem('lotto_ai_model');
+    if (savedModel) setModelOverride(savedModel);
+  }, []);
+
+  const handleApiKeyChange = (val: string) => {
+    setApiKeyOverride(val);
+    localStorage.setItem('lotto_ai_apikey', val);
+  };
+
+  const handleModelChange = (val: string) => {
+    setModelOverride(val);
+    localStorage.setItem('lotto_ai_model', val);
+  };
 
   const loadAiStats = async () => {
     try {
@@ -228,7 +251,7 @@ export default function AnalysisPage() {
     try {
       // Need to use dynamic import or the api client if available
       const { getAnalysis } = await import('../../lib/api');
-      const result = await getAnalysis();
+      const result = await getAnalysis({ apiKey: apiKeyOverride || undefined, model: modelOverride || undefined });
       setAiAnalysisText(result.analysis);
       setAiPredictedTop3(result.predictedTop3 || []);
       setAiPredictedTop2(result.predictedTop2 || []);
@@ -403,9 +426,45 @@ export default function AnalysisPage() {
 
             {/* Actions Box */}
             <div className="bg-[#11151e] border border-[#2a3244] rounded-xl p-6 flex-1 min-w-[300px] shadow-lg flex flex-col justify-center items-center relative">
-              <p className="text-[#6c7086] mb-6 text-center text-sm">
+              <div className="absolute top-4 right-4">
+                <button onClick={() => setShowAiSettings(!showAiSettings)} className="text-sm text-[#89b4fa] hover:underline bg-[#89b4fa]/10 px-3 py-1 rounded-full border border-[#89b4fa]/30 transition-colors">
+                  ⚙️ ตั้งค่า AI
+                </button>
+              </div>
+
+              <p className="text-[#6c7086] mb-6 mt-4 text-center text-sm px-4">
                 ระบบใช้ AI อัจฉริยะวิเคราะห์ผลรางวัลย้อนหลัง ร่วมกับสถิติและการล็อคเลข เพื่อหาเลขที่มีโอกาสออกมากที่สุด 8 ชุด
               </p>
+
+              {showAiSettings && (
+                <div className="w-full bg-[#181825] border border-[#313244] rounded-lg p-4 mb-6 shadow-inner text-left">
+                  <h4 className="text-[#cba6f7] font-bold text-sm mb-3">⚙️ ตั้งค่าการเชื่อมต่อ AI</h4>
+                  <div className="mb-3">
+                    <label className="text-xs text-[#a6adc8] block mb-1">API Key (ทับซ้อนค่าเริ่มต้นของระบบ)</label>
+                    <input 
+                      type="password" 
+                      value={apiKeyOverride}
+                      onChange={e => handleApiKeyChange(e.target.value)}
+                      placeholder="วาง Gemini API Key ของคุณที่นี่ (เว้นว่างเพื่อใช้ค่าระบบ)" 
+                      className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-xs focus:border-[#89b4fa] outline-none transition-colors"
+                    />
+                    <div className="text-[10px] text-[#6c7086] mt-1">รับฟรีได้ที่ Google AI Studio</div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#a6adc8] block mb-1">โมเดล AI (เวอร์ชัน)</label>
+                    <select 
+                      value={modelOverride} 
+                      onChange={e => handleModelChange(e.target.value)}
+                      className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-xs focus:border-[#89b4fa] outline-none"
+                    >
+                      <option value="">-- ใช้ค่ามาตรฐานของระบบ (แนะนำ) --</option>
+                      <option value="gemini-2.0-flash">gemini-2.0-flash (ใหม่ล่าสุด & เร็ว)</option>
+                      <option value="gemini-1.5-flash">gemini-1.5-flash (เสถียร)</option>
+                      <option value="gemini-1.5-pro">gemini-1.5-pro (ฉลาดที่สุดแต่อาจช้า)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
               
               <button
                 onClick={handleRunAi}

@@ -178,8 +178,12 @@ export async function deleteArchive(id: number) {
   return res.json();
 }
 
-export async function getAnalysis() {
-  const res = await fetchWithRetry(`${API_BASE}/analysis`, { cache: 'no-store' });
+export async function getAnalysis(options?: { apiKey?: string, model?: string }) {
+  const res = await fetchWithRetry(`${API_BASE}/analysis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options || {})
+  });
   if (!res.ok) {
     let errMessage = 'Failed to fetch analysis';
     try {

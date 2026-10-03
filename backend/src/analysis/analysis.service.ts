@@ -6,10 +6,10 @@ import { historicalData as defaultHistoricalData } from './historical.js';
 export class AnalysisService {
   constructor(private prisma: PrismaService) {}
 
-  async analyzeCurrentPeriod() {
-    const apiKey = process.env.GEMINI_API_KEY;
+  async analyzeCurrentPeriod(apiKeyOverride?: string, modelOverride?: string) {
+    const apiKey = apiKeyOverride || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      throw new HttpException('API Key Not Found', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException('API Key Not Found. Please provide an API key.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     try {
@@ -56,7 +56,10 @@ ${historyDataStr}
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
+      let modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      if (modelOverride) {
+        modelsToTry = [modelOverride];
+      }
       let rawText = '';
       let allErrors: string[] = [];
 

@@ -5,9 +5,9 @@ import { AnalysisService } from './analysis.service.js';
 export class AnalysisController {
   constructor(private readonly analysisService: AnalysisService) {}
 
-  @Get()
-  async getAnalysis() {
-    return this.analysisService.analyzeCurrentPeriod();
+  @Post()
+  async runAnalysis(@Body() body: { apiKey?: string, model?: string }) {
+    return this.analysisService.analyzeCurrentPeriod(body?.apiKey, body?.model);
   }
 
   @Get('latest-prediction')
