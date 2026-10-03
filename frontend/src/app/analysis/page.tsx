@@ -202,21 +202,24 @@ export default function AnalysisPage() {
   }, [analysisTab]);
 
   useEffect(() => {
-    // Load saved settings
-    const savedKey = localStorage.getItem('lotto_ai_apikey');
-    if (savedKey) setApiKeyOverride(savedKey);
-    const savedModel = localStorage.getItem('lotto_ai_model');
-    if (savedModel) setModelOverride(savedModel);
+    try {
+      // Load saved settings
+      const savedKey = localStorage.getItem('lotto_ai_apikey');
+      if (savedKey) setApiKeyOverride(savedKey);
+      const savedModel = localStorage.getItem('lotto_ai_model');
+      if (savedModel) setModelOverride(savedModel);
+    } catch(e) {}
   }, []);
 
-  const handleApiKeyChange = (val: string) => {
-    setApiKeyOverride(val);
-    localStorage.setItem('lotto_ai_apikey', val);
-  };
-
-  const handleModelChange = (val: string) => {
-    setModelOverride(val);
-    localStorage.setItem('lotto_ai_model', val);
+  const handleSaveSettings = () => {
+    try {
+      localStorage.setItem('lotto_ai_apikey', apiKeyOverride);
+      localStorage.setItem('lotto_ai_model', modelOverride);
+      alert('บันทึกการตั้งค่าลงในเครื่องของคุณเรียบร้อยแล้ว');
+      setShowAiSettings(false);
+    } catch(e: any) {
+      alert('ไม่สามารถบันทึกได้: ' + e.message);
+    }
   };
 
   const loadAiStats = async () => {
@@ -444,17 +447,17 @@ export default function AnalysisPage() {
                     <input 
                       type="password" 
                       value={apiKeyOverride}
-                      onChange={e => handleApiKeyChange(e.target.value)}
+                      onChange={e => setApiKeyOverride(e.target.value)}
                       placeholder="วาง Gemini API Key ของคุณที่นี่ (เว้นว่างเพื่อใช้ค่าระบบ)" 
                       className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-xs focus:border-[#89b4fa] outline-none transition-colors"
                     />
                     <div className="text-[10px] text-[#6c7086] mt-1">รับฟรีได้ที่ Google AI Studio</div>
                   </div>
-                  <div>
+                  <div className="mb-4">
                     <label className="text-xs text-[#a6adc8] block mb-1">โมเดล AI (เวอร์ชัน)</label>
                     <select 
                       value={modelOverride} 
-                      onChange={e => handleModelChange(e.target.value)}
+                      onChange={e => setModelOverride(e.target.value)}
                       className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-xs focus:border-[#89b4fa] outline-none"
                     >
                       <option value="">-- ใช้ค่ามาตรฐานของระบบ (แนะนำ) --</option>
@@ -467,6 +470,14 @@ export default function AnalysisPage() {
                       <option value="gemini-1.5-flash">gemini-1.5-flash (เสถียร)</option>
                       <option value="gemini-1.5-pro">gemini-1.5-pro (ฉลาดที่สุดแต่อาจช้า)</option>
                     </select>
+                  </div>
+                  <div className="flex justify-end">
+                    <button 
+                      onClick={handleSaveSettings}
+                      className="bg-[#a6e3a1] text-[#11111b] px-4 py-2 rounded text-xs font-bold hover:opacity-90"
+                    >
+                      💾 บันทึกการตั้งค่า
+                    </button>
                   </div>
                 </div>
               )}
