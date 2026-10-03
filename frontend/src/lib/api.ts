@@ -221,7 +221,11 @@ export async function addAiHistory(data: { period: string, top3: string, bot2: s
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to add AI history');
+  if (!res.ok) {
+    let msg = 'Failed to add AI history';
+    try { const j = await res.json(); if (j?.message) msg = j.message; } catch (e) {}
+    throw new Error(msg);
+  }
   return res.json();
 }
 

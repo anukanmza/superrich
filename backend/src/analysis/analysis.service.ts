@@ -143,9 +143,25 @@ ${historyDataStr}
   }
 
   async addHistory(data: { period: string, top3: string, bot2: string, aiTop3?: string[], aiTop2?: string[], aiBot2?: string[] }) {
-    if (!data.period || !data.top3 || !data.bot2) {
-      throw new HttpException('Missing required fields', HttpStatus.BAD_REQUEST);
+    const period = (data.period || '').trim();
+    const top3 = (data.top3 || '').trim();
+    const bot2 = (data.bot2 || '').trim();
+    if (!period || !top3 || !bot2) {
+      throw new HttpException('กรุณากรอกงวดและผลรางวัลให้ครบถ้วน', HttpStatus.BAD_REQUEST);
     }
+
+    const existing = await this.prisma.aiHistoricalData.findUnique({ where: { period } });
+    if (existing) {
+      throw new HttpException(`งวด "${period}" มีอยู่ในระบบแล้ว`, HttpStatus.CONFLICT);
+    }
+
+    // Clean prediction lists: trim, drop blanks; treat empty list as "no prediction"
+    const clean = (arr?: string[]) => {
+      if (!Array.isArray(arr)) return undefined;
+      const out = arr.map(s => String(s).trim()).filter(Boolean);
+      return out.length ? out : undefined;
+    };
+    data = { period, top3, bot2, aiTop3: clean(data.aiTop3), aiTop2: clean(data.aiTop2), aiBot2: clean(data.aiBot2) };
     
     const isHitTop3 = data.aiTop3 ? data.aiTop3.includes(data.top3) : false;
     // 2 ตัวบน คือ 2 ตัวท้ายของรางวัลที่ 1 (3ตัวบน)
@@ -199,23 +215,20 @@ ${historyDataStr}
   }
 
   async getStats() {
-    // Temporary auto-fix: if there are any AI predictions but the total Predictions table is empty,
-    // or if we just want to clear out corrupted historical data that has aiPredictions.
-    // The user mentioned they NEVER evaluated accuracy yet.
     const predictionsCount = await this.prisma.aiPrediction.count();
     const historyCount = await this.prisma.aiHistoricalData.count();
 
-    // Calculate real accuracy from DB
-    let evaluatedRecords = await this.prisma.aiHistoricalData.findMany({
-      where: { aiPredictedTop3: { not: null } }
+    // Calculate real accuracy from DB (records where any AI prediction was recorded).
+    // NOTE: read-only — never auto-modify data here.
+    const evaluatedRecords = await this.prisma.aiHistoricalData.findMany({
+      where: {
+        OR: [
+          { aiPredictedTop3: { not: null } },
+          { aiPredictedTop2: { not: null } },
+          { aiPredictedBot2: { not: null } },
+        ],
+      },
     });
-
-    // Auto-fix: If there are evaluated records but they shouldn't exist, clear them.
-    // We will consider them buggy if the aiPredictedTop3 is literally just "[]" or if the user hasn't made any AI predictions yet.
-    if (evaluatedRecords.length > 0 && predictionsCount === 0) {
-       await this.fixDb();
-       evaluatedRecords = [];
-    }
 
     let accuracyTop3 = "0%";
     let accuracyTop2 = "0%";

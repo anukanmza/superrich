@@ -79,19 +79,18 @@ export class BillsService {
       settingsObj[s.key] = s.value;
     });
 
-    // Create archive
-    const archive = await this.prisma.periodArchive.create({
-      data: {
-        period: periodName,
-        bills: JSON.stringify(allBills),
-        cutouts: cutoutsJson,
-        results: resultsJson,
-        settings: JSON.stringify(settingsObj)
-      }
-    });
-
-    // Clear active data in a transaction
-    await this.prisma.$transaction([
+    // Create archive + clear active bills atomically (all-or-nothing).
+    // Only Bill/Entry are cleared. AI data (AiHistoricalData, AiPrediction) is NOT touched.
+    const [archive] = await this.prisma.$transaction([
+      this.prisma.periodArchive.create({
+        data: {
+          period: periodName,
+          bills: JSON.stringify(allBills),
+          cutouts: cutoutsJson,
+          results: resultsJson,
+          settings: JSON.stringify(settingsObj)
+        }
+      }),
       this.prisma.entry.deleteMany({}),
       this.prisma.bill.deleteMany({}),
     ]);

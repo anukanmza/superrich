@@ -93,8 +93,8 @@ export default function ClosePeriodPage() {
           <ul className="text-sm text-[#a6adc8] space-y-2">
             <li>จำนวนบิลทั้งหมด: <b className="text-[#cdd6f4]">{billsCount} บิล</b></li>
             <li>ยอดรับแทงรวมทั้งหมด: <b className="text-[#a6e3a1]">฿{totalAmount.toLocaleString()}</b></li>
-            <li>ประวัติการตัดส่งออก: <b className="text-[#f38ba8]">{JSON.parse(cutoutsJson).length} รายการ</b></li>
-            <li>ผลรางวัลประจำงวด: <b className="text-[#f9e2af]">{Object.keys(JSON.parse(resultsJson)).length} หมวดหมู่</b></li>
+            <li>ประวัติการตัดส่งออก: <b className="text-[#f38ba8]">{(() => { try { return (JSON.parse(cutoutsJson) || []).length; } catch { return 0; } })()} รายการ</b></li>
+            <li>ผลรางวัลประจำงวด: <b className="text-[#f9e2af]">{(() => { try { return Object.keys(JSON.parse(resultsJson) || {}).length; } catch { return 0; } })()} หมวดหมู่</b></li>
           </ul>
         </div>
 
@@ -103,6 +103,8 @@ export default function ClosePeriodPage() {
             <label className="block text-sm text-[#f38ba8] mb-2 font-bold">ยืนยันตัวตนด้วย Master PIN ก่อนดำเนินการ</label>
             <input 
               type="password" 
+              autoComplete="new-password"
+              name="close-period-master-pin"
               value={inputPin}
               onChange={e => setInputPin(e.target.value)}
               placeholder="รหัสผ่านเจ้ามือ (Master PIN)"

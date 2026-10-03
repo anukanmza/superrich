@@ -330,9 +330,10 @@ export default function AnalysisPage() {
       const payload: any = { period: newPeriod, top3: newTop3, bot2: newBot2 };
       
       // Parse AI predictions if provided
-      if (aiTop3) payload.aiTop3 = aiTop3.split(',').map(s => s.trim());
-      if (aiTop2) payload.aiTop2 = aiTop2.split(',').map(s => s.trim());
-      if (aiBot2) payload.aiBot2 = aiBot2.split(',').map(s => s.trim());
+      const toList = (s: string) => s.split(/[,\s]+/).map(x => x.trim()).filter(Boolean);
+      if (toList(aiTop3).length) payload.aiTop3 = toList(aiTop3);
+      if (toList(aiTop2).length) payload.aiTop2 = toList(aiTop2);
+      if (toList(aiBot2).length) payload.aiBot2 = toList(aiBot2);
 
       await addAiHistory(payload);
       setShowFeedbackForm(false);
