@@ -183,6 +183,9 @@ export default function AnalysisPage() {
   const [apiKeyOverride, setApiKeyOverride] = useState('');
   const [modelOverride, setModelOverride] = useState(''); // empty string means default
   const [showAiSettings, setShowAiSettings] = useState(false);
+  const [savedApiKey, setSavedApiKey] = useState(''); // value actually persisted & used
+  const [savedModel, setSavedModel] = useState('');
+  const [showKeyText, setShowKeyText] = useState(false);
   
   const [aiStats, setAiStats] = useState<any>(null);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
@@ -201,27 +204,64 @@ export default function AnalysisPage() {
     }
   }, [analysisTab]);
 
+  const readSavedSettings = () => {
+    try {
+      const k = (localStorage.getItem('lotto_ai_apikey') || '').trim();
+      const m = localStorage.getItem('lotto_ai_model') || '';
+      setSavedApiKey(k);
+      setSavedModel(m);
+      return { k, m };
+    } catch (e) {
+      return { k: '', m: '' };
+    }
+  };
+
+  // Load saved settings on page load so analysis uses them even if the panel is never opened
   useEffect(() => {
-    // Load saved settings every time the settings panel is opened
+    readSavedSettings();
+  }, []);
+
+  useEffect(() => {
+    // Reset form to the saved values every time the settings panel is opened
     if (showAiSettings) {
-      try {
-        const savedKey = localStorage.getItem('lotto_ai_apikey');
-        if (savedKey) setApiKeyOverride(savedKey);
-        const savedModel = localStorage.getItem('lotto_ai_model');
-        if (savedModel) setModelOverride(savedModel);
-      } catch(e) {}
+      const { k, m } = readSavedSettings();
+      setApiKeyOverride(k);
+      setModelOverride(m);
+      setShowKeyText(false);
     }
   }, [showAiSettings]);
 
   const handleSaveSettings = () => {
     try {
-      localStorage.setItem('lotto_ai_apikey', apiKeyOverride);
+      const k = apiKeyOverride.trim();
+      localStorage.setItem('lotto_ai_apikey', k);
       localStorage.setItem('lotto_ai_model', modelOverride);
+      setSavedApiKey(k);
+      setSavedModel(modelOverride);
       alert('บันทึกการตั้งค่าลงในเครื่องของคุณเรียบร้อยแล้ว');
       setShowAiSettings(false);
     } catch(e: any) {
       alert('ไม่สามารถบันทึกได้: ' + e.message);
     }
+  };
+
+  const handleResetSettings = () => {
+    try {
+      localStorage.removeItem('lotto_ai_apikey');
+      localStorage.removeItem('lotto_ai_model');
+    } catch (e) {}
+    setApiKeyOverride('');
+    setModelOverride('');
+    setSavedApiKey('');
+    setSavedModel('');
+    alert('รีเซ็ตกลับไปใช้ค่าเริ่มต้นของระบบแล้ว');
+    setShowAiSettings(false);
+  };
+
+  const maskKey = (k: string) => {
+    if (!k) return '';
+    if (k.length <= 10) return k.slice(0, 2) + '••••';
+    return `${k.slice(0, 6)}••••••${k.slice(-4)}`;
   };
 
   const loadAiStats = async () => {
@@ -256,7 +296,8 @@ export default function AnalysisPage() {
     try {
       // Need to use dynamic import or the api client if available
       const { getAnalysis } = await import('../../lib/api');
-      const result = await getAnalysis({ apiKey: apiKeyOverride || undefined, model: modelOverride || undefined });
+      const { k, m } = readSavedSettings();
+      const result = await getAnalysis({ apiKey: k || undefined, model: m || undefined });
       setAiAnalysisText(result.analysis);
       setAiPredictedTop3(result.predictedTop3 || []);
       setAiPredictedTop2(result.predictedTop2 || []);
@@ -437,22 +478,63 @@ export default function AnalysisPage() {
                 </button>
               </div>
 
-              <p className="text-[#6c7086] mb-6 mt-4 text-center text-sm px-4">
+              <p className="text-[#6c7086] mb-4 mt-4 text-center text-sm px-4">
                 ระบบใช้ AI อัจฉริยะวิเคราะห์ผลรางวัลย้อนหลัง ร่วมกับสถิติและการล็อคเลข เพื่อหาเลขที่มีโอกาสออกมากที่สุด 8 ชุด
               </p>
+
+              {/* Active config display */}
+              <div className="w-full mb-4 bg-[#181825] border border-[#313244] rounded-lg px-4 py-3 text-xs flex flex-col gap-1.5">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[#6c7086]">🔑 API Key ที่ใช้งานอยู่</span>
+                  {savedApiKey ? (
+                    <span className="font-mono text-[#a6e3a1] bg-[#a6e3a1]/10 px-2 py-0.5 rounded">{maskKey(savedApiKey)} <span className="text-[#6c7086]">(ของคุณ)</span></span>
+                  ) : (
+                    <span className="text-[#f9e2af] bg-[#f9e2af]/10 px-2 py-0.5 rounded">ค่าเริ่มต้นของระบบ</span>
+                  )}
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[#6c7086]">🤖 โมเดลที่ใช้งานอยู่</span>
+                  {savedModel ? (
+                    <span className="font-mono text-[#89b4fa] bg-[#89b4fa]/10 px-2 py-0.5 rounded">{savedModel}</span>
+                  ) : (
+                    <span className="text-[#f9e2af] bg-[#f9e2af]/10 px-2 py-0.5 rounded">ค่าเริ่มต้นของระบบ</span>
+                  )}
+                </div>
+              </div>
 
               {showAiSettings && (
                 <div className="w-full bg-[#181825] border border-[#313244] rounded-lg p-4 mb-6 shadow-inner text-left">
                   <h4 className="text-[#cba6f7] font-bold text-sm mb-3">⚙️ ตั้งค่าการเชื่อมต่อ AI</h4>
                   <div className="mb-3">
                     <label className="text-xs text-[#a6adc8] block mb-1">API Key (ทับซ้อนค่าเริ่มต้นของระบบ)</label>
-                    <input 
-                      type="password" 
-                      value={apiKeyOverride}
-                      onChange={e => setApiKeyOverride(e.target.value)}
-                      placeholder="วาง Gemini API Key ของคุณที่นี่ (เว้นว่างเพื่อใช้ค่าระบบ)" 
-                      className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-xs focus:border-[#89b4fa] outline-none transition-colors"
-                    />
+                    <div className="flex gap-2">
+                      {/* type="text" + CSS masking so the browser password manager won't autofill it */}
+                      <input 
+                        type="text"
+                        name="lotto-gemini-key"
+                        id="lotto-gemini-key"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-form-type="other"
+                        value={apiKeyOverride}
+                        onChange={e => setApiKeyOverride(e.target.value)}
+                        placeholder="วาง Gemini API Key ของคุณที่นี่ (เว้นว่างเพื่อใช้ค่าระบบ)" 
+                        style={showKeyText ? undefined : ({ WebkitTextSecurity: 'disc' } as any)}
+                        className="flex-1 bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-xs font-mono focus:border-[#89b4fa] outline-none transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowKeyText(v => !v)}
+                        className="px-3 text-xs rounded border border-[#313244] text-[#a6adc8] hover:text-[#cdd6f4] hover:border-[#89b4fa] transition-colors"
+                        title={showKeyText ? 'ซ่อน' : 'แสดง'}
+                      >
+                        {showKeyText ? '🙈' : '👁️'}
+                      </button>
+                    </div>
                     <div className="text-[10px] text-[#6c7086] mt-1">รับฟรีได้ที่ Google AI Studio</div>
                   </div>
                   <div className="mb-4">
@@ -473,8 +555,16 @@ export default function AnalysisPage() {
                       <option value="gemini-1.5-pro">gemini-1.5-pro (ฉลาดที่สุดแต่อาจช้า)</option>
                     </select>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-between gap-2">
                     <button 
+                      type="button"
+                      onClick={handleResetSettings}
+                      className="text-[#f38ba8] border border-[#f38ba8]/40 px-3 py-2 rounded text-xs hover:bg-[#f38ba8]/10"
+                    >
+                      ↺ ใช้ค่าเริ่มต้นของระบบ
+                    </button>
+                    <button 
+                      type="button"
                       onClick={handleSaveSettings}
                       className="bg-[#a6e3a1] text-[#11111b] px-4 py-2 rounded text-xs font-bold hover:opacity-90"
                     >
