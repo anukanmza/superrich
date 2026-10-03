@@ -202,14 +202,16 @@ export default function AnalysisPage() {
   }, [analysisTab]);
 
   useEffect(() => {
-    try {
-      // Load saved settings
-      const savedKey = localStorage.getItem('lotto_ai_apikey');
-      if (savedKey) setApiKeyOverride(savedKey);
-      const savedModel = localStorage.getItem('lotto_ai_model');
-      if (savedModel) setModelOverride(savedModel);
-    } catch(e) {}
-  }, []);
+    // Load saved settings every time the settings panel is opened
+    if (showAiSettings) {
+      try {
+        const savedKey = localStorage.getItem('lotto_ai_apikey');
+        if (savedKey) setApiKeyOverride(savedKey);
+        const savedModel = localStorage.getItem('lotto_ai_model');
+        if (savedModel) setModelOverride(savedModel);
+      } catch(e) {}
+    }
+  }, [showAiSettings]);
 
   const handleSaveSettings = () => {
     try {
@@ -657,9 +659,9 @@ export default function AnalysisPage() {
               <h3 className="text-[#cba6f7] font-bold text-lg mb-4 border-b border-[#313244] pb-2 flex items-center gap-2">
                 <span className="text-xl">📜</span> ประวัติการตรวจสอบความแม่นยำ AI ย้อนหลัง
               </h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-[550px] overflow-y-auto rounded-lg custom-scrollbar">
                 <table className="w-full text-sm">
-                  <thead>
+                  <thead className="sticky top-0 bg-[#11151e] z-10 shadow-md">
                     <tr className="text-[#6c7086] border-b border-[#313244] text-left">
                       <th className="py-2 px-2">งวด</th>
                       <th className="py-2 px-2">3 ตัวบน (ออกจริง)</th>
