@@ -458,6 +458,11 @@ export default function AnalysisPage() {
                       className="w-full bg-[#11111b] border border-[#313244] rounded p-2 text-[#cdd6f4] text-xs focus:border-[#89b4fa] outline-none"
                     >
                       <option value="">-- ใช้ค่ามาตรฐานของระบบ (แนะนำ) --</option>
+                      <option value="gemini-3.8-flash">gemini-3.8-flash</option>
+                      <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+                      <option value="gemini-3.6-flash">gemini-3.6-flash</option>
+                      <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                      <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                       <option value="gemini-2.0-flash">gemini-2.0-flash (ใหม่ล่าสุด & เร็ว)</option>
                       <option value="gemini-1.5-flash">gemini-1.5-flash (เสถียร)</option>
                       <option value="gemini-1.5-pro">gemini-1.5-pro (ฉลาดที่สุดแต่อาจช้า)</option>
