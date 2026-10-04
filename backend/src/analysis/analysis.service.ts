@@ -62,39 +62,47 @@ ${historyDataStr}
       }
       let rawText = '';
       let allErrors: string[] = [];
+      let lastErrorMessage = '';
+
+      // Retry transient errors (503 overloaded / 429 rate limit / 500) with backoff: 2s -> 4s -> 8s (max 3 retries)
+      const RETRY_DELAYS_MS = [2000, 4000, 8000];
+      const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
       for (const modelName of modelsToTry) {
-        try {
-          const model = genAI.getGenerativeModel({
-            model: modelName,
-            generationConfig: {
-              temperature: 0.7,
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            temperature: 0.7,
+          }
+        });
+
+        for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+          try {
+            const result = await model.generateContent(prompt);
+            rawText = result.response.text();
+            break;
+          } catch (e: any) {
+            const msg = e?.message || String(e);
+            lastErrorMessage = msg;
+            allErrors.push(`${modelName} (attempt ${attempt + 1}): ${msg}`);
+            console.log(`SDK Model ${modelName} attempt ${attempt + 1} failed:`, msg);
+
+            if (attempt < RETRY_DELAYS_MS.length && this.isTransientError(msg)) {
+              const delay = RETRY_DELAYS_MS[attempt];
+              console.log(`Retrying ${modelName} in ${delay / 1000}s...`);
+              await sleep(delay);
+              continue;
             }
-          });
-          
-          const result = await model.generateContent(prompt);
-          rawText = result.response.text();
-          if (rawText) break;
-        } catch (e: any) {
-          allErrors.push(`${modelName}: ${e.message}`);
-          console.log(`SDK Model ${modelName} failed:`, e.message);
+            break; // non-transient error or retries exhausted
+          }
         }
+        if (rawText) break;
       }
 
       if (!rawText) {
-        let availableModels = 'Unknown';
-        try {
-          const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-          const modelsData = await modelsRes.json();
-          if (modelsData.models) {
-            availableModels = modelsData.models.map((m: any) => m.name).join(', ');
-          } else {
-            availableModels = JSON.stringify(modelsData);
-          }
-        } catch (err) {
-          availableModels = 'Failed to fetch model list';
-        }
-        throw new Error(`Gemini SDK Error. Errors: ${allErrors.join(' | ')}. Available models: ${availableModels}`);
+        // Keep full technical details in server logs only
+        console.error('Gemini analysis failed. Details:', allErrors.join(' | '));
+        throw new HttpException(this.toFriendlyErrorMessage(lastErrorMessage), HttpStatus.SERVICE_UNAVAILABLE);
       }
       
       let resultObj;
@@ -106,7 +114,8 @@ ${historyDataStr}
         cleanText = cleanText.trim();
         resultObj = JSON.parse(cleanText);
       } catch (e) {
-        throw new Error("Invalid JSON from Gemini: " + rawText);
+        console.error('Invalid JSON from Gemini:', rawText);
+        throw new HttpException('AI ตอบกลับมาในรูปแบบที่ไม่ถูกต้อง กรุณากดวิเคราะห์ใหม่อีกครั้ง หรือลองเปลี่ยนโมเดล', HttpStatus.BAD_GATEWAY);
       }
 
       // Save prediction to DB (using a dummy target period name for now, in a real app this would be the actual upcoming period)
@@ -132,8 +141,32 @@ ${historyDataStr}
       };
     } catch (err: any) {
       console.error('Analysis error:', err.message);
-      throw new HttpException(err.message || 'Error processing AI analysis', HttpStatus.INTERNAL_SERVER_ERROR);
+      if (err instanceof HttpException) throw err;
+      throw new HttpException('เกิดข้อผิดพลาดระหว่างการวิเคราะห์ด้วย AI กรุณาลองใหม่อีกครั้ง', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  private isTransientError(msg: string): boolean {
+    return /\b(503|429|500)\b|Service Unavailable|high demand|overloaded|Too Many Requests|RESOURCE_EXHAUSTED|Internal Server Error|fetch failed|ECONNRESET|ETIMEDOUT/i.test(msg);
+  }
+
+  private toFriendlyErrorMessage(msg: string): string {
+    if (/API_KEY_INVALID|API key not valid|\b401\b|\b403\b|PERMISSION_DENIED/i.test(msg)) {
+      return 'API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน กรุณาตรวจสอบ API Key ในหน้าตั้งค่า';
+    }
+    if (/\b404\b|not found|is not supported/i.test(msg)) {
+      return 'ไม่พบโมเดล AI ที่เลือก หรือ API Key นี้ไม่รองรับโมเดลนี้ กรุณาเลือกโมเดลอื่น';
+    }
+    if (/\b429\b|Too Many Requests|RESOURCE_EXHAUSTED|quota/i.test(msg)) {
+      return 'ใช้งาน AI เกินโควต้าชั่วคราว กรุณารอสักครู่แล้วลองใหม่ หรือเปลี่ยนโมเดล';
+    }
+    if (/\b503\b|Service Unavailable|high demand|overloaded/i.test(msg)) {
+      return 'เซิร์ฟเวอร์ AI ไม่ว่างชั่วคราว (ระบบลองซ้ำให้แล้ว 3 ครั้ง) กรุณาลองใหม่อีกครั้งในอีกสักครู่ หรือเปลี่ยนโมเดล';
+    }
+    if (/fetch failed|ECONNRESET|ETIMEDOUT|ENOTFOUND/i.test(msg)) {
+      return 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ AI ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่';
+    }
+    return 'ไม่สามารถวิเคราะห์ด้วย AI ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง หรือเปลี่ยนโมเดล';
   }
 
   async getHistory() {

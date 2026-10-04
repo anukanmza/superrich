@@ -1,11 +1,11 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Retry wrapper to handle Render free-tier cold starts (server sleeps after 15 min idle)
-async function fetchWithRetry(url: string, options?: RequestInit, maxRetries = 3): Promise<Response> {
+async function fetchWithRetry(url: string, options?: RequestInit, maxRetries = 3, timeoutMs = 30000): Promise<Response> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeout = setTimeout(() => controller.abort(), timeoutMs); // default 30s timeout
       
       const res = await fetch(url, {
         ...options,
@@ -179,11 +179,12 @@ export async function deleteArchive(id: number) {
 }
 
 export async function getAnalysis(options?: { apiKey?: string, model?: string }) {
+  // Backend already retries Gemini (2s/4s/8s), so use a single attempt with a long timeout (3 min)
   const res = await fetchWithRetry(`${API_BASE}/analysis`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(options || {})
-  });
+  }, 1, 180000);
   if (!res.ok) {
     let errMessage = 'Failed to fetch analysis';
     try {
