@@ -237,3 +237,63 @@ export async function resetAiStats() {
   if (!res.ok) throw new Error('Failed to reset AI stats');
   return res.json();
 }
+
+// ===== Lao lottery AI =====
+async function laoJson(res: Response, fallback: string) {
+  if (!res.ok) {
+    let msg = fallback;
+    try { const j = await res.json(); if (j?.message) msg = Array.isArray(j.message) ? j.message.join(', ') : j.message; } catch (e) {}
+    throw new Error(msg);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+export async function runLaoAnalysis(options?: { apiKey?: string, model?: string }) {
+  // Backend retries Gemini itself, so single attempt with a long timeout (3 min)
+  const res = await fetchWithRetry(`${API_BASE}/lao-analysis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options || {}),
+  }, 1, 180000);
+  return laoJson(res, 'วิเคราะห์หวยลาวไม่สำเร็จ');
+}
+
+export async function getLaoLatestPrediction() {
+  const res = await fetchWithRetry(`${API_BASE}/lao-analysis/latest-prediction`, { cache: 'no-store' });
+  return laoJson(res, 'โหลดผลวิเคราะห์ล่าสุดไม่สำเร็จ');
+}
+
+export async function getLaoHistory() {
+  const res = await fetchWithRetry(`${API_BASE}/lao-analysis/history`, { cache: 'no-store' });
+  return laoJson(res, 'โหลดประวัติหวยลาวไม่สำเร็จ');
+}
+
+export async function getLaoStats() {
+  const res = await fetchWithRetry(`${API_BASE}/lao-analysis/stats`, { cache: 'no-store' });
+  return laoJson(res, 'โหลดสถิติหวยลาวไม่สำเร็จ');
+}
+
+export async function addLaoHistory(data: { period: string, result4: string, checkLatest?: boolean }) {
+  // single attempt: avoid duplicate inserts on retry
+  const res = await fetchWithRetry(`${API_BASE}/lao-analysis/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }, 1);
+  return laoJson(res, 'บันทึกผลรางวัลไม่สำเร็จ');
+}
+
+export async function importLaoHistory(text: string) {
+  const res = await fetchWithRetry(`${API_BASE}/lao-analysis/history/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  }, 1, 60000);
+  return laoJson(res, 'นำเข้าข้อมูลไม่สำเร็จ');
+}
+
+export async function deleteLaoHistory(id: number) {
+  const res = await fetchWithRetry(`${API_BASE}/lao-analysis/history/${id}`, { method: 'DELETE' }, 1);
+  return laoJson(res, 'ลบข้อมูลไม่สำเร็จ');
+}

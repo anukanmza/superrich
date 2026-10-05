@@ -75,3 +75,40 @@ model AiPrediction {
   analysisText  String?  // Store the generated AI analysis response
   createdAt     DateTime @default(now())
 }
+
+// ===== Lao lottery AI (separate from Thai tables) =====
+model LaoHistoricalData {
+  id              Int       @id @default(autoincrement())
+  period          String    @unique
+  drawDate        DateTime? // parsed from period (dd/mm/yyyy) for ordering
+  result4         String    // e.g. "1234"
+  top3            String    // last 3 digits  -> "234"
+  top2            String    // last 2 digits  -> "34"
+  bot2            String    // first 2 digits -> "12"
+  predictionId    Int?      // LaoPrediction checked against this result
+  aiPredicted4    String?   // JSON [{num,strategy,reason}]
+  aiPredictedTop3 String?
+  aiPredictedTod3 String?
+  aiPredictedTop2 String?
+  aiPredictedBot2 String?
+  isHit4          Boolean   @default(false)
+  isHitTop3       Boolean   @default(false)
+  isHitTod3       Boolean   @default(false)
+  isHitTop2       Boolean   @default(false)
+  isHitBot2       Boolean   @default(false)
+  hitDetails      String?   // JSON [{type,num,strategy,reason}]
+  createdAt       DateTime  @default(now())
+}
+
+model LaoPrediction {
+  id            Int      @id @default(autoincrement())
+  targetPeriod  String
+  predicted4    String   // JSON [{num,strategy,reason}]
+  predictedTop3 String
+  predictedTod3 String
+  predictedTop2 String
+  predictedBot2 String
+  analysisText  String?
+  model         String?
+  createdAt     DateTime @default(now())
+}

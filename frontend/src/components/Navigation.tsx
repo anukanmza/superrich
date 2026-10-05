@@ -12,6 +12,7 @@ export default function Navigation() {
     { name: '📊 ยอดรวมเลข', path: '/summary' },
     { name: '✂️ คัดเลขส่งออก', path: '/cutout' },
     { name: '📈 วิเคราะห์', path: '/analysis' },
+    { name: '🇱🇦 AI หวยลาว', path: '/lao-analysis' },
     { name: '🏆 ผลรางวัล', path: '/rewards' },
     { name: '📒 สรุปยอดลูกค้า', path: '/customer-summary' },
     { name: '💾 บันทึกและลบข้อมูล', path: '/close-period' },
